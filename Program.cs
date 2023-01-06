@@ -7,7 +7,7 @@ if (string.IsNullOrWhiteSpace(TOKEN))
   throw new Exception("Missing TOKEN environment variable.");
 }
 
-IEnumerable<string> FindUrlsInContent(string content)
+static IEnumerable<string> FindUrlsInContent(string content)
 {
   if (string.IsNullOrWhiteSpace(content))
   {
