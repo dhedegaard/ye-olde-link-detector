@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Linq;
+using System.Text.RegularExpressions;
 using Discord.WebSocket;
 
 var TOKEN = Environment.GetEnvironmentVariable("TOKEN");
@@ -15,8 +16,11 @@ static IEnumerable<string> FindUrlsInContent(string content)
   }
   var result = UrlRegex().Match(content);
   return from e in result.Captures
+         where !string.IsNullOrWhiteSpace(e.Value)
          select e.Value;
 }
+
+var guildsData = new Dictionary<ulong, Dictionary<string, int>>();
 
 using var client = new DiscordSocketClient(new DiscordSocketConfig
 {
@@ -42,19 +46,34 @@ client.GuildAvailable += async (guild) =>
     {
       try
       {
+        var urlsData = guildsData.GetValueOrDefault(guild.Id);
+        if (urlsData == null)
+        {
+          urlsData = new Dictionary<string, int>();
+          guildsData[guild.Id] = urlsData;
+        }
+
+
         await foreach (var chunk in channel.GetMessagesAsync())
         {
+          Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - urls count: {urlsData.Count}");
           foreach (var message in chunk)
           {
             if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
             {
               continue;
             }
-            var urls = FindUrlsInContent(message.Content);
-            if (urls.Any())
+            foreach (var url in FindUrlsInContent(message.Content))
             {
-              Console.WriteLine("URLS:" + string.Join(", ", urls));
-              throw new Exception("STOP!");
+
+              if (urlsData.TryGetValue(url, out int value))
+              {
+                value++;
+              }
+              else
+              {
+                urlsData.Add(url, 1);
+              }
             }
           }
         }
