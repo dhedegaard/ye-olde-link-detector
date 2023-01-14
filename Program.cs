@@ -46,7 +46,11 @@ client.MessageReceived += msg =>
   return Task.CompletedTask;
 };
 
-client.GuildAvailable += (guild) => InitialGuildImporter.Import(guild, db);
+client.GuildAvailable += (guild) =>
+{
+  InitialGuildImporter.Import(guild, db);
+  return Task.CompletedTask;
+};
 
 client.Connected += async () =>
 {
