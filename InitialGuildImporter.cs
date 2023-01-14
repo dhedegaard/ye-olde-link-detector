@@ -3,7 +3,7 @@ using Discord.WebSocket;
 
 public static class InitialGuildImporter
 {
-  public static async Task Import(SocketGuild guild, DataContext db)
+  public static void Import(SocketGuild guild, DataContext db)
   {
     // TODO: Handle messages in all the chunks or whatever.
     foreach (var channel in guild.TextChannels)
@@ -25,13 +25,13 @@ public static class InitialGuildImporter
               {
                 await db.AddAsync(
                   new Message(
-                  MessageId: message.Id.ToString(),
-                  Url: url,
-                  ChannelId: message.Channel.Id.ToString(),
-                  Timestamp: message.CreatedAt,
-                  AuthorName: message.Author.Username
-                )
-              );
+                    MessageId: message.Id.ToString(),
+                    Url: url,
+                    ChannelId: message.Channel.Id.ToString(),
+                    Timestamp: message.CreatedAt,
+                    AuthorName: message.Author.Username
+                  )
+                );
               }
             }
             await db.SaveChangesAsync();
