@@ -53,7 +53,6 @@ client.GuildAvailable += async (guild) =>
           guildsData[guild.Id] = urlsData;
         }
 
-
         await foreach (var chunk in channel.GetMessagesAsync())
         {
           Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - urls count: {urlsData.Count}");
