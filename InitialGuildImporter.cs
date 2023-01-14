@@ -5,6 +5,7 @@ public static class InitialGuildImporter
 {
   public static async Task Import(SocketGuild guild, DataContext db)
   {
+    // TODO: Handle messages in all the chunks or whatever.
     foreach (var channel in guild.TextChannels)
     {
       _ = Task.Run(async () =>
@@ -26,7 +27,7 @@ public static class InitialGuildImporter
                   new Message(
                   MessageId: message.Id.ToString(),
                   Url: url,
-                  GuildId: guild.Id.ToString(),
+                  ChannelId: message.Channel.Id.ToString(),
                   Timestamp: message.CreatedAt,
                   AuthorName: message.Author.Username
                 )

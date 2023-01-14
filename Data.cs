@@ -17,12 +17,12 @@ public class DataContext : DbContext
 }
 
 
-[Index(nameof(Url), nameof(GuildId), nameof(Timestamp))]
+[Index(nameof(Url), nameof(ChannelId), nameof(Timestamp))]
 public record Message(
   [property: Key]
   string MessageId,
   string Url,
-  string GuildId,
+  string ChannelId,
   DateTimeOffset Timestamp,
   string AuthorName
 );

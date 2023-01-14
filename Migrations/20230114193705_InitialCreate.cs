@@ -17,7 +17,7 @@ namespace yeoldelinkdetector.Migrations
                 {
                     MessageId = table.Column<string>(type: "TEXT", nullable: false),
                     Url = table.Column<string>(type: "TEXT", nullable: false),
-                    GuildId = table.Column<string>(type: "TEXT", nullable: false),
+                    ChannelId = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
                     AuthorName = table.Column<string>(type: "TEXT", nullable: false)
                 },
@@ -27,9 +27,9 @@ namespace yeoldelinkdetector.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_Url_GuildId_Timestamp",
+                name: "IX_Messages_Url_ChannelId_Timestamp",
                 table: "Messages",
-                columns: new[] { "Url", "GuildId", "Timestamp" });
+                columns: new[] { "Url", "ChannelId", "Timestamp" });
         }
 
         /// <inheritdoc />

@@ -27,10 +27,21 @@ client.MessageReceived += msg =>
   {
     return Task.CompletedTask;
   }
-  Console.WriteLine(msg);
-  if (msg.Content == "!ping")
+  foreach (var url in FindUrlsInContent.FindUrls(msg.Content))
   {
-    msg.Channel.SendMessageAsync("pong");
+    _ = Task.Run(async () =>
+    {
+      await db.AddAsync(
+        new Message(
+          MessageId: msg.Id.ToString(),
+          Url: url,
+          ChannelId: msg.Channel.Id.ToString(),
+          Timestamp: msg.CreatedAt,
+          AuthorName: msg.Author.Username
+        )
+      );
+      await db.SaveChangesAsync();
+    });
   }
   return Task.CompletedTask;
 };

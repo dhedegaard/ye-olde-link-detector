@@ -25,7 +25,7 @@ namespace yeoldelinkdetector.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("GuildId")
+                    b.Property<string>("ChannelId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -38,7 +38,7 @@ namespace yeoldelinkdetector.Migrations
 
                     b.HasKey("MessageId");
 
-                    b.HasIndex("Url", "GuildId", "Timestamp");
+                    b.HasIndex("Url", "ChannelId", "Timestamp");
 
                     b.ToTable("Messages");
                 });

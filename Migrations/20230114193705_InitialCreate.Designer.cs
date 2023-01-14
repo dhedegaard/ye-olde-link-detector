@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace yeoldelinkdetector.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230114185453_InitialCreate")]
+    [Migration("20230114193705_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -28,7 +28,7 @@ namespace yeoldelinkdetector.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("GuildId")
+                    b.Property<string>("ChannelId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -41,7 +41,7 @@ namespace yeoldelinkdetector.Migrations
 
                     b.HasKey("MessageId");
 
-                    b.HasIndex("Url", "GuildId", "Timestamp");
+                    b.HasIndex("Url", "ChannelId", "Timestamp");
 
                     b.ToTable("Messages");
                 });
