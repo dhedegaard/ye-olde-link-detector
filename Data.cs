@@ -1,6 +1,4 @@
-
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 public class DataContext : DbContext
@@ -20,11 +18,11 @@ public class DataContext : DbContext
 
 
 [Index(nameof(Url), nameof(GuildId), nameof(Timestamp))]
-public record Message
-{
-  [Key]
-  public string MessageId { get; set; }
-  public string Url { get; set; }
-  public string GuildId { get; set; }
-  public DateTime Timestamp { get; set; }
-}
+public record Message(
+  [property: Key]
+  string MessageId,
+  string Url,
+  string GuildId,
+  DateTimeOffset Timestamp,
+  string AuthorName
+);

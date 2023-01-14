@@ -18,7 +18,8 @@ namespace yeoldelinkdetector.Migrations
                     MessageId = table.Column<string>(type: "TEXT", nullable: false),
                     Url = table.Column<string>(type: "TEXT", nullable: false),
                     GuildId = table.Column<string>(type: "TEXT", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    AuthorName = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
