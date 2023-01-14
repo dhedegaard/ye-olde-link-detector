@@ -14,8 +14,18 @@ using var client = new DiscordSocketClient(new DiscordSocketConfig
 });
 
 
+client.Log += (msg) =>
+{
+  Console.WriteLine($"Discord.Net LOG: {msg}");
+  return Task.CompletedTask;
+};
 client.MessageReceived += msg =>
 {
+  if (msg.Author.IsBot)
+  {
+    return Task.CompletedTask;
+  }
+  Console.WriteLine(msg);
   if (msg.Content == "!ping")
   {
     msg.Channel.SendMessageAsync("pong");
