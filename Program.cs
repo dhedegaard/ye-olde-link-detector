@@ -10,7 +10,9 @@ using var db = new DataContext();
 
 using var client = new DiscordSocketClient(new DiscordSocketConfig
 {
-  GatewayIntents = Discord.GatewayIntents.Guilds | Discord.GatewayIntents.GuildMessages
+  GatewayIntents = Discord.GatewayIntents.Guilds
+    | Discord.GatewayIntents.GuildMessages
+    | Discord.GatewayIntents.MessageContent,
 });
 
 
