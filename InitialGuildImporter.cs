@@ -11,9 +11,9 @@ public static class InitialGuildImporter
       {
         try
         {
+          using var db = new DataContext();
           await foreach (var chunk in channel.GetMessagesAsync())
           {
-            using var db = new DataContext();
             Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count}");
             foreach (var message in chunk)
             {
@@ -23,7 +23,7 @@ public static class InitialGuildImporter
               }
               foreach (var url in FindUrlsInContent.FindUrls(message.Content))
               {
-                db.Add(
+                await db.AddAsync(
                  new Message(
                   MessageId: message.Id.ToString(),
                   Url: url,
@@ -32,10 +32,10 @@ public static class InitialGuildImporter
                   AuthorName: message.Author.Username
                  )
                );
-                db.SaveChanges();
               }
             }
           }
+          await db.SaveChangesAsync();
         }
         catch (Discord.Net.HttpException e)
         {

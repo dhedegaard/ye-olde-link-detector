@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 
 var TOKEN = Environment.GetEnvironmentVariable("TOKEN");
 if (string.IsNullOrWhiteSpace(TOKEN))
@@ -31,18 +32,20 @@ client.MessageReceived += msg =>
     {
       using var db = new DataContext();
       Console.WriteLine("URL!: " + url);
-      var existing = db.Messages
+      var existing = (await db.Messages
         .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
-        .ToList()
+        .ToListAsync())
         .OrderBy(e => e.Timestamp);
       Console.WriteLine($"EXISTING: {url} - {existing.Count()} - {existing}");
       if (existing.Any())
       {
-        await msg.Channel.SendMessageAsync(text: Formatter.FormatOutputMessage(
+        var reply = Formatter.FormatOutputMessage(
           userId: msg.Author.Id.ToString(),
           url: url,
           postCount: existing.Count(),
-          firstTimePosted: existing.First()));
+          firstTimePosted: existing.First());
+        await msg.Channel.SendMessageAsync(text: reply);
+        Console.WriteLine("REPLY: " + reply);
       }
       await db.AddAsync(
         new Message(
@@ -53,7 +56,7 @@ client.MessageReceived += msg =>
           AuthorName: msg.Author.Username
         )
       );
-      db.SaveChanges();
+      await db.SaveChangesAsync();
     });
   }
   return Task.CompletedTask;
