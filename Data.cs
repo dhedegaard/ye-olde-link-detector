@@ -2,33 +2,36 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-public class DataContext : DbContext
+namespace YeOldeLinkDetector
 {
-  public DbSet<Message>? Messages { get; set; }
-
-  protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+  public class DataContext : DbContext
   {
-    var dataDirectory = Path.Join(Directory.GetCurrentDirectory(), "data");
-    if (!Directory.Exists(dataDirectory))
+    public DbSet<Message>? Messages { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-      Directory.CreateDirectory(dataDirectory);
+      var dataDirectory = Path.Join(Directory.GetCurrentDirectory(), "data");
+      if (!Directory.Exists(dataDirectory))
+      {
+        Directory.CreateDirectory(dataDirectory);
+      }
+      optionsBuilder.UseSqlite(new SqliteConnectionStringBuilder
+      {
+        DataSource = Path.Join(dataDirectory, "data.sqlite"),
+        Cache = SqliteCacheMode.Shared,
+        Pooling = false,
+      }.ToString());
     }
-    optionsBuilder.UseSqlite(new SqliteConnectionStringBuilder
-    {
-      DataSource = Path.Join(dataDirectory, "data.sqlite"),
-      Cache = SqliteCacheMode.Shared,
-      Pooling = false,
-    }.ToString());
   }
-}
 
 
-[Index(nameof(Url), nameof(ChannelId), nameof(Timestamp))]
-public record Message(
-  [property: Key]
+  [Index(nameof(Url), nameof(ChannelId), nameof(Timestamp))]
+  public record Message(
+    [property: Key]
   string MessageId,
-  string Url,
-  string ChannelId,
-  DateTimeOffset Timestamp,
-  string AuthorName
-);
+    string Url,
+    string ChannelId,
+    DateTimeOffset Timestamp,
+    string AuthorName
+  );
+}

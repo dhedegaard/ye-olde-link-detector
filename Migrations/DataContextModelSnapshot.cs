@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using YeOldeLinkDetector;
 
 #nullable disable
 
@@ -16,7 +17,7 @@ namespace yeoldelinkdetector.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.2");
 
-            modelBuilder.Entity("Message", b =>
+            modelBuilder.Entity("YeOldeLinkDetector.Message", b =>
                 {
                     b.Property<string>("MessageId")
                         .HasColumnType("TEXT");

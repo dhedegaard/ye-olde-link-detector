@@ -4,13 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using YeOldeLinkDetector;
 
 #nullable disable
 
 namespace yeoldelinkdetector.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230114193705_InitialCreate")]
+    [Migration("20230116195452_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -19,7 +20,7 @@ namespace yeoldelinkdetector.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.2");
 
-            modelBuilder.Entity("Message", b =>
+            modelBuilder.Entity("YeOldeLinkDetector.Message", b =>
                 {
                     b.Property<string>("MessageId")
                         .HasColumnType("TEXT");

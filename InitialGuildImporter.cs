@@ -1,51 +1,54 @@
 using Discord.WebSocket;
 
-public static class InitialGuildImporter
+namespace YeOldeLinkDetector
 {
-  public static void Import(SocketGuild guild)
+  public static class InitialGuildImporter
   {
-    // TODO: Handle messages in all the chunks or whatever.
-    foreach (var channel in guild.TextChannels)
+    public static void Import(SocketGuild guild)
     {
-      _ = Task.Run(async () =>
+      // TODO: Handle messages in all the chunks or whatever.
+      foreach (var channel in guild.TextChannels)
       {
-        try
+        _ = Task.Run(async () =>
         {
-          using var db = new DataContext();
-          await foreach (var chunk in channel.GetMessagesAsync())
+          try
           {
-            Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count}");
-            foreach (var message in chunk)
+            using var db = new DataContext();
+            await foreach (var chunk in channel.GetMessagesAsync())
             {
-              if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
+              Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count}");
+              foreach (var message in chunk)
               {
-                continue;
-              }
-              foreach (var url in FindUrlsInContent.FindUrls(message.Content))
-              {
-                await db.AddAsync(
-                 new Message(
-                  MessageId: message.Id.ToString(),
-                  Url: url,
-                  ChannelId: message.Channel.Id.ToString(),
-                  Timestamp: message.CreatedAt,
-                  AuthorName: message.Author.Username
-                 )
-               );
+                if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
+                {
+                  continue;
+                }
+                foreach (var url in FindUrlsInContent.FindUrls(message.Content))
+                {
+                  await db.AddAsync(
+                   new Message(
+                    MessageId: message.Id.ToString(),
+                    Url: url,
+                    ChannelId: message.Channel.Id.ToString(),
+                    Timestamp: message.CreatedAt,
+                    AuthorName: message.Author.Username
+                   )
+                 );
+                }
               }
             }
+            await db.SaveChangesAsync();
           }
-          await db.SaveChangesAsync();
-        }
-        catch (Discord.Net.HttpException e)
-        {
-          if (((int)e.HttpCode) == 50001)
+          catch (Discord.Net.HttpException e)
           {
-            Console.WriteLine("Missing permission to read channel " + channel.Name + " (" + channel.Id + ")");
+            if (((int)e.HttpCode) == 50001)
+            {
+              Console.WriteLine("Missing permission to read channel " + channel.Name + " (" + channel.Id + ")");
+            }
           }
-        }
 
-      });
+        });
+      }
     }
   }
 }
