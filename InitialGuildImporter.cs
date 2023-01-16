@@ -14,30 +14,44 @@ namespace YeOldeLinkDetector
           try
           {
             using var db = new DataContext();
-            await foreach (var chunk in channel.GetMessagesAsync())
+            ulong? lastMessageId = null;
+            while (true)
             {
-              Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count}");
-              foreach (var message in chunk)
+              await foreach (var chunk in
+                lastMessageId == null || lastMessageId.HasValue
+                  ? channel.GetMessagesAsync(limit: 1000)
+                  : channel.GetMessagesAsync(limit: 1000, dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
+              )
               {
-                if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
+                var hasAtLeastOneMessage = false;
+                Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
+                foreach (var message in chunk)
                 {
-                  continue;
+                  hasAtLeastOneMessage = true;
+                  if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
+                  {
+                    continue;
+                  }
+                  foreach (var url in FindUrlsInContent.FindUrls(message.Content))
+                  {
+                    await db.AddAsync(
+                     new Message(
+                      MessageId: message.Id.ToString(),
+                      Url: url,
+                      ChannelId: message.Channel.Id.ToString(),
+                      Timestamp: message.CreatedAt,
+                      AuthorName: message.Author.Username
+                     )
+                   );
+                  }
                 }
-                foreach (var url in FindUrlsInContent.FindUrls(message.Content))
+                if (!hasAtLeastOneMessage)
                 {
-                  await db.AddAsync(
-                   new Message(
-                    MessageId: message.Id.ToString(),
-                    Url: url,
-                    ChannelId: message.Channel.Id.ToString(),
-                    Timestamp: message.CreatedAt,
-                    AuthorName: message.Author.Username
-                   )
-                 );
+                  break;
                 }
+                await db.SaveChangesAsync();
               }
             }
-            await db.SaveChangesAsync();
           }
           catch (Discord.Net.HttpException e)
           {
