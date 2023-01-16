@@ -6,7 +6,7 @@ namespace YeOldeLinkDetector
 {
   public class DataContext : DbContext
   {
-    public DbSet<Message>? Messages { get; set; }
+    public DbSet<Message> Messages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
