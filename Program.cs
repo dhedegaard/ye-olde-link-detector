@@ -35,6 +35,8 @@ client.MessageReceived += msg =>
       var existing = (await db.Messages
         .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
         .ToListAsync())
+        // NOTE: For unknown reasons, ORDER BY takes forever, so we do it in
+        // memory.
         .OrderBy(e => e.Timestamp);
       Console.WriteLine($"EXISTING: {url} - {existing.Count()} - {existing}");
       if (existing.Any())
