@@ -1,7 +1,6 @@
 # Ye olde link detector
 
 ![Docker Image CI](https://github.com/dhedegaard/ye-olde-link-detector/workflows/Docker%20Image%20CI/badge.svg)
-[![Maintainability](https://api.codeclimate.com/v1/badges/3133aaa2b17bc268914d/maintainability)](https://codeclimate.com/github/dhedegaard/ye-olde-link-detector/maintainability)
 
 A small discord bot for detecting when duplicate links are being posted.
 
