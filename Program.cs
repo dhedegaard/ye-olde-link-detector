@@ -6,8 +6,6 @@ if (string.IsNullOrWhiteSpace(TOKEN))
   throw new Exception("Missing TOKEN environment variable.");
 }
 
-using var db = new DataContext();
-
 using var client = new DiscordSocketClient(new DiscordSocketConfig
 {
   GatewayIntents = Discord.GatewayIntents.Guilds
@@ -31,6 +29,21 @@ client.MessageReceived += msg =>
   {
     _ = Task.Run(async () =>
     {
+      using var db = new DataContext();
+      Console.WriteLine("URL!: " + url);
+      var existing = db.Messages
+        .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
+        .ToList()
+        .OrderBy(e => e.Timestamp);
+      Console.WriteLine($"EXISTING: {url} - {existing.Count()} - {existing}");
+      if (existing.Any())
+      {
+        await msg.Channel.SendMessageAsync(text: Formatter.FormatOutputMessage(
+          userId: msg.Author.Id.ToString(),
+          url: url,
+          postCount: existing.Count(),
+          firstTimePosted: existing.First()));
+      }
       await db.AddAsync(
         new Message(
           MessageId: msg.Id.ToString(),
@@ -40,7 +53,7 @@ client.MessageReceived += msg =>
           AuthorName: msg.Author.Username
         )
       );
-      await db.SaveChangesAsync();
+      db.SaveChanges();
     });
   }
   return Task.CompletedTask;
@@ -48,7 +61,7 @@ client.MessageReceived += msg =>
 
 client.GuildAvailable += (guild) =>
 {
-  InitialGuildImporter.Import(guild, db);
+  InitialGuildImporter.Import(guild);
   return Task.CompletedTask;
 };
 

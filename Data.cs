@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 public class DataContext : DbContext
@@ -12,7 +13,12 @@ public class DataContext : DbContext
     {
       Directory.CreateDirectory(dataDirectory);
     }
-    optionsBuilder.UseSqlite($"Data Source={Path.Join(dataDirectory, "data.sqlite")}");
+    optionsBuilder.UseSqlite(new SqliteConnectionStringBuilder
+    {
+      DataSource = Path.Join(dataDirectory, "data.sqlite"),
+      Cache = SqliteCacheMode.Shared,
+      Pooling = false,
+    }.ToString());
   }
 }
 

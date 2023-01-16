@@ -1,9 +1,8 @@
-
 using Discord.WebSocket;
 
 public static class InitialGuildImporter
 {
-  public static void Import(SocketGuild guild, DataContext db)
+  public static void Import(SocketGuild guild)
   {
     // TODO: Handle messages in all the chunks or whatever.
     foreach (var channel in guild.TextChannels)
@@ -14,6 +13,7 @@ public static class InitialGuildImporter
         {
           await foreach (var chunk in channel.GetMessagesAsync())
           {
+            using var db = new DataContext();
             Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count}");
             foreach (var message in chunk)
             {
@@ -23,18 +23,18 @@ public static class InitialGuildImporter
               }
               foreach (var url in FindUrlsInContent.FindUrls(message.Content))
               {
-                await db.AddAsync(
-                  new Message(
-                    MessageId: message.Id.ToString(),
-                    Url: url,
-                    ChannelId: message.Channel.Id.ToString(),
-                    Timestamp: message.CreatedAt,
-                    AuthorName: message.Author.Username
-                  )
-                );
+                db.Add(
+                 new Message(
+                  MessageId: message.Id.ToString(),
+                  Url: url,
+                  ChannelId: message.Channel.Id.ToString(),
+                  Timestamp: message.CreatedAt,
+                  AuthorName: message.Author.Username
+                 )
+               );
+                db.SaveChanges();
               }
             }
-            await db.SaveChangesAsync();
           }
         }
         catch (Discord.Net.HttpException e)
