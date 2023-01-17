@@ -44,8 +44,9 @@ namespace YeOldeLinkDetector
                      )
                    );
                   }
+                  lastMessageId = message.Id;
                 }
-                if (!hasAtLeastOneMessage)
+                if (!hasAtLeastOneMessage || !lastMessageId.HasValue)
                 {
                   break;
                 }
