@@ -25,6 +25,8 @@ namespace YeOldeLinkDetector
               {
                 var hasAtLeastOneMessage = false;
                 Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
+                // TODO: If all the messages in the chunk is already known,
+                // stop fetching chunks as we probably have all the messages.
                 foreach (var message in chunk)
                 {
                   hasAtLeastOneMessage = true;
