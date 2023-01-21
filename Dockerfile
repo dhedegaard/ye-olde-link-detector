@@ -14,4 +14,4 @@ WORKDIR /app
 COPY --from=build-env /app/out .
 
 VOLUME [ "/app/data" ]
-ENTRYPOINT ["dotnet", "ye-olde-link-detector.dll"]
+CMD [ "sh", "-c", "dotnet ef database update && dotnet ye-olde-link-detector.dll"]
