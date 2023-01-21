@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace YeOldeLinkDetector
 {
@@ -21,7 +22,7 @@ namespace YeOldeLinkDetector
           DataSource = Path.Join(dataDirectory, "data.sqlite"),
         }.ToString())
         .EnableDetailedErrors()
-        // .LogTo(Console.WriteLine)
+        .LogTo(Console.WriteLine, LogLevel.Warning)
         .EnableThreadSafetyChecks();
     }
   }
