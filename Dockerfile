@@ -13,5 +13,8 @@ FROM mcr.microsoft.com/dotnet/runtime:7.0
 WORKDIR /app
 COPY --from=build-env /app/out .
 
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
+
 VOLUME [ "/app/data" ]
-CMD [ "sh", "-c", "dotnet tool install --global dotnet-ef && dotnet ef database update && dotnet ye-olde-link-detector.dll"]
+CMD [ "sh", "-c", "dotnet ef database update && dotnet ye-olde-link-detector.dll"]
