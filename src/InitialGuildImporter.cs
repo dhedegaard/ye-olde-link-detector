@@ -17,6 +17,7 @@ namespace YeOldeLinkDetector
             var hasAtLeastOneMessage = false;
             do
             {
+              Console.WriteLine($"  processing message chunks for guild ({guild.Name}) - channel ({channel.Name}) - lastMessageId: {lastMessageId}");
               await foreach (var chunk in
                 lastMessageId == null || !lastMessageId.HasValue
                   ? channel.GetMessagesAsync(limit: 1000)
@@ -24,7 +25,6 @@ namespace YeOldeLinkDetector
               )
               {
                 using var db = new DataContext();
-                Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
                 // TODO: If all the messages in the chunk is already known,
                 // stop fetching chunks as we probably have all the messages.
                 foreach (var message in chunk)
@@ -36,17 +36,23 @@ namespace YeOldeLinkDetector
                   }
                   foreach (var url in FindUrlsInContent.FindUrls(message.Content))
                   {
-                    await db.AddAsync(
-                      new Message(
-                        MessageId: message.Id.ToString(),
-                        Url: url,
-                        ChannelId: message.Channel.Id.ToString(),
-                        Timestamp: message.CreatedAt,
-                        AuthorName: message.Author.Username
-                      )
-                    );
+                    var existing = await db.FindAsync<Message>(message.Id.ToString());
+                    if (existing == null)
+                    {
+                      await db.AddAsync(
+                        new Message(
+                          MessageId: message.Id.ToString(),
+                          Url: url,
+                          ChannelId: message.Channel.Id.ToString(),
+                          Timestamp: message.CreatedAt,
+                          AuthorName: message.Author.Username
+                        )
+                      );
+                    }
                   }
-                  lastMessageId = message.Id;
+                  lastMessageId = lastMessageId.HasValue && lastMessageId.Value == message.Id
+                    ? null
+                    : message.Id;
                 }
                 await db.SaveChangesAsync();
                 Console.WriteLine($"  done processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
