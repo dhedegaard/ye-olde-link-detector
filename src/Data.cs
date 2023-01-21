@@ -15,13 +15,14 @@ namespace YeOldeLinkDetector
       {
         Directory.CreateDirectory(dataDirectory);
       }
-      optionsBuilder.UseSqlite(new SqliteConnectionStringBuilder
-      {
-        DataSource = Path.Join(dataDirectory, "data.sqlite"),
-        Cache = SqliteCacheMode.Private,
-        Pooling = false,
-        Mode = SqliteOpenMode.ReadWriteCreate,
-      }.ToString());
+      optionsBuilder
+        .UseSqlite(new SqliteConnectionStringBuilder
+        {
+          DataSource = Path.Join(dataDirectory, "data.sqlite"),
+        }.ToString())
+        .EnableDetailedErrors()
+        // .LogTo(Console.WriteLine)
+        .EnableThreadSafetyChecks();
     }
   }
 

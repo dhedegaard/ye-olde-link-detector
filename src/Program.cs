@@ -32,9 +32,9 @@ client.MessageReceived += msg =>
     _ = Task.Run(async () =>
     {
       using var db = new DataContext();
-      var existing = (await db.Messages
+      var existing = db.Messages
         .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
-        .ToListAsync())
+        .ToList()
         // NOTE: For unknown reasons, ORDER BY takes forever, so we do it in
         // memory.
         .OrderBy(e => e.Timestamp);

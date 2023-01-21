@@ -23,10 +23,10 @@ namespace YeOldeLinkDetector
                   : channel.GetMessagesAsync(limit: 1000, dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
               )
               {
+                using var db = new DataContext();
                 Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
                 // TODO: If all the messages in the chunk is already known,
                 // stop fetching chunks as we probably have all the messages.
-                using var db = new DataContext();
                 foreach (var message in chunk)
                 {
                   hasAtLeastOneMessage = true;
@@ -49,6 +49,7 @@ namespace YeOldeLinkDetector
                   lastMessageId = message.Id;
                 }
                 await db.SaveChangesAsync();
+                Console.WriteLine($"  done processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
               }
             } while (hasAtLeastOneMessage && lastMessageId.HasValue);
             Console.WriteLine("no more messages for channel: " + channel.Name + " (" + channel.Id + ")");
