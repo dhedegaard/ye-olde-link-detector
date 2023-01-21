@@ -18,10 +18,11 @@ namespace YeOldeLinkDetector
             do
             {
               Console.WriteLine($"  processing message chunks for guild ({guild.Name}) - channel ({channel.Name}) - lastMessageId: {lastMessageId}");
+              var messageIds = new HashSet<ulong>();
               await foreach (var chunk in
                 lastMessageId == null || !lastMessageId.HasValue
-                  ? channel.GetMessagesAsync(limit: 1000)
-                  : channel.GetMessagesAsync(limit: 1000, dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
+                  ? channel.GetMessagesAsync()
+                  : channel.GetMessagesAsync(dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
               )
               {
                 using var db = new DataContext();
@@ -29,6 +30,7 @@ namespace YeOldeLinkDetector
                 // stop fetching chunks as we probably have all the messages.
                 foreach (var message in chunk)
                 {
+                  messageIds.Add(message.Id);
                   hasAtLeastOneMessage = true;
                   if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
                   {
@@ -50,10 +52,11 @@ namespace YeOldeLinkDetector
                       );
                     }
                   }
-                  lastMessageId = lastMessageId.HasValue && lastMessageId.Value == message.Id
-                    ? null
-                    : message.Id;
                 }
+                var lowestMessageId = messageIds.Min();
+                lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
+                  ? null
+                  : lowestMessageId;
                 await db.SaveChangesAsync();
                 Console.WriteLine($"  done processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
               }
