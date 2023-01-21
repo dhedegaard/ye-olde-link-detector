@@ -18,8 +18,9 @@ namespace YeOldeLinkDetector
       optionsBuilder.UseSqlite(new SqliteConnectionStringBuilder
       {
         DataSource = Path.Join(dataDirectory, "data.sqlite"),
-        Cache = SqliteCacheMode.Shared,
+        Cache = SqliteCacheMode.Private,
         Pooling = false,
+        Mode = SqliteOpenMode.ReadWriteCreate,
       }.ToString());
     }
   }

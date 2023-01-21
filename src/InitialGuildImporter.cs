@@ -13,20 +13,20 @@ namespace YeOldeLinkDetector
         {
           try
           {
-            using var db = new DataContext();
             ulong? lastMessageId = null;
-            while (true)
+            var hasAtLeastOneMessage = false;
+            do
             {
               await foreach (var chunk in
-                lastMessageId == null || lastMessageId.HasValue
+                lastMessageId == null || !lastMessageId.HasValue
                   ? channel.GetMessagesAsync(limit: 1000)
                   : channel.GetMessagesAsync(limit: 1000, dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
               )
               {
-                var hasAtLeastOneMessage = false;
                 Console.WriteLine($"  processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
                 // TODO: If all the messages in the chunk is already known,
                 // stop fetching chunks as we probably have all the messages.
+                using var db = new DataContext();
                 foreach (var message in chunk)
                 {
                   hasAtLeastOneMessage = true;
@@ -37,24 +37,21 @@ namespace YeOldeLinkDetector
                   foreach (var url in FindUrlsInContent.FindUrls(message.Content))
                   {
                     await db.AddAsync(
-                     new Message(
-                      MessageId: message.Id.ToString(),
-                      Url: url,
-                      ChannelId: message.Channel.Id.ToString(),
-                      Timestamp: message.CreatedAt,
-                      AuthorName: message.Author.Username
-                     )
-                   );
+                      new Message(
+                        MessageId: message.Id.ToString(),
+                        Url: url,
+                        ChannelId: message.Channel.Id.ToString(),
+                        Timestamp: message.CreatedAt,
+                        AuthorName: message.Author.Username
+                      )
+                    );
                   }
                   lastMessageId = message.Id;
                 }
-                if (!hasAtLeastOneMessage || !lastMessageId.HasValue)
-                {
-                  break;
-                }
                 await db.SaveChangesAsync();
               }
-            }
+            } while (hasAtLeastOneMessage && lastMessageId.HasValue);
+            Console.WriteLine("no more messages for channel: " + channel.Name + " (" + channel.Id + ")");
           }
           catch (Discord.Net.HttpException e)
           {
