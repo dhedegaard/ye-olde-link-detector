@@ -35,7 +35,7 @@ client.MessageReceived += msg =>
   {
     _ = Task.Run(async () =>
     {
-      string reply = null;
+      string reply = "";
       lock (DataContext.DataContextLock)
       {
         using var db = new DataContext();
@@ -65,7 +65,7 @@ client.MessageReceived += msg =>
         );
         db.SaveChanges();
       }
-      if (reply != null)
+      if (!string.IsNullOrWhiteSpace(reply))
       {
         await msg.Channel.SendMessageAsync(text: reply);
         Console.WriteLine("REPLY: " + reply);
