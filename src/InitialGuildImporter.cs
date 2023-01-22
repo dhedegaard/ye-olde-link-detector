@@ -24,7 +24,6 @@ namespace YeOldeLinkDetector
                   : channel.GetMessagesAsync(dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
               )
               {
-                using var db = new DataContext();
                 // TODO: If all the messages in the chunk is already known,
                 // stop fetching chunks as we probably have all the messages.
                 foreach (var message in chunk)
@@ -37,18 +36,24 @@ namespace YeOldeLinkDetector
                   }
                   foreach (var url in FindUrlsInContent.FindUrls(message.Content))
                   {
-                    var existing = await db.FindAsync<Message>(message.Id.ToString());
-                    if (existing == null)
+                    lock (DataContext.DataContextLock)
                     {
-                      await db.AddAsync(
-                        new Message(
-                          MessageId: message.Id.ToString(),
-                          Url: url,
-                          ChannelId: message.Channel.Id.ToString(),
-                          Timestamp: message.CreatedAt,
-                          AuthorName: message.Author.Username
-                        )
-                      );
+                      using var db = new DataContext();
+
+                      var existing = db.Find<Message>(message.Id.ToString());
+                      if (existing == null)
+                      {
+                        db.Add(
+                          new Message(
+                            MessageId: message.Id.ToString(),
+                            Url: url,
+                            ChannelId: message.Channel.Id.ToString(),
+                            Timestamp: message.CreatedAt,
+                            AuthorName: message.Author.Username
+                          )
+                        );
+                      }
+                      db.SaveChanges();
                     }
                   }
                 }
@@ -56,7 +61,6 @@ namespace YeOldeLinkDetector
                 lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
                   ? null
                   : lowestMessageId;
-                await db.SaveChangesAsync();
                 Console.WriteLine($"  done processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
               }
             } while (hasAtLeastOneMessage && lastMessageId.HasValue);

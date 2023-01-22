@@ -35,33 +35,41 @@ client.MessageReceived += msg =>
   {
     _ = Task.Run(async () =>
     {
-      using var db = new DataContext();
-      var existing = db.Messages
-        .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
-        .ToList()
-        // NOTE: For unknown reasons, ORDER BY takes forever, so we do it in
-        // memory.
-        .OrderBy(e => e.Timestamp);
-      if (existing.Any())
+      string reply = null;
+      lock (DataContext.DataContextLock)
       {
-        var reply = Formatter.FormatOutputMessage(
-          userId: msg.Author.Id.ToString(),
-          url: url,
-          postCount: existing.Count(),
-          firstTimePosted: existing.First());
+        using var db = new DataContext();
+        var existing = db.Messages
+          .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
+          .ToList()
+          // NOTE: For unknown reasons, ORDER BY takes forever, so we do it in
+          // memory.
+          .OrderBy(e => e.Timestamp);
+        if (existing.Any())
+        {
+          reply = Formatter.FormatOutputMessage(
+           userId: msg.Author.Id.ToString(),
+           url: url,
+           postCount: existing.Count(),
+           firstTimePosted: existing.First());
+
+        }
+        db.Add(
+          new Message(
+            MessageId: msg.Id.ToString(),
+            Url: url,
+            ChannelId: msg.Channel.Id.ToString(),
+            Timestamp: msg.CreatedAt,
+            AuthorName: msg.Author.Username
+          )
+        );
+        db.SaveChanges();
+      }
+      if (reply != null)
+      {
         await msg.Channel.SendMessageAsync(text: reply);
         Console.WriteLine("REPLY: " + reply);
       }
-      await db.AddAsync(
-        new Message(
-          MessageId: msg.Id.ToString(),
-          Url: url,
-          ChannelId: msg.Channel.Id.ToString(),
-          Timestamp: msg.CreatedAt,
-          AuthorName: msg.Author.Username
-        )
-      );
-      await db.SaveChangesAsync();
     });
   }
   return Task.CompletedTask;

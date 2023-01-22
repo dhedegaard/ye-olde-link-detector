@@ -7,6 +7,9 @@ namespace YeOldeLinkDetector
 {
   public class DataContext : DbContext
   {
+    private static readonly object dataContextLock = new object();
+    public static dynamic DataContextLock => dataContextLock;
+
     public DbSet<Message> Messages { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
