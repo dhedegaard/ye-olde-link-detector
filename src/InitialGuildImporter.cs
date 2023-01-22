@@ -6,7 +6,6 @@ namespace YeOldeLinkDetector
   {
     public static void Import(SocketGuild guild)
     {
-      // TODO: Handle messages in all the chunks or whatever.
       foreach (var channel in guild.TextChannels)
       {
         _ = Task.Run(async () =>
