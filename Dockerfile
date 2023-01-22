@@ -13,4 +13,4 @@ RUN dotnet tool install --global dotnet-ef
 ENV PATH="$PATH:/root/.dotnet/tools"
 
 VOLUME [ "/app/data" ]
-CMD dotnet ef database update && dotnet ye-olde-link-detector.dll
+CMD dotnet out/ye-olde-link-detector.dll
