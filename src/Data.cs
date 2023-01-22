@@ -7,7 +7,7 @@ namespace YeOldeLinkDetector
 {
   public class DataContext : DbContext
   {
-    private static readonly object dataContextLock = new object();
+    private static readonly object dataContextLock = new();
     public static dynamic DataContextLock => dataContextLock;
 
     public DbSet<Message> Messages { get; set; } = null!;
