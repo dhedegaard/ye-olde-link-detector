@@ -3,3 +3,6 @@ obj
 .vscode
 data
 .git
+
+Dockerfile
+docker-compose.yml
