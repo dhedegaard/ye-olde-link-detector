@@ -15,5 +15,4 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 ENV TOKEN=set_me
 ENV CONNECTION_STRING=set_me
 
-VOLUME [ "/app/data" ]
 CMD dotnet out/ye-olde-link-detector.dll

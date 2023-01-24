@@ -11,11 +11,6 @@ namespace YeOldeLinkDetector
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-      var dataDirectory = Path.Join(Directory.GetCurrentDirectory(), "data");
-      if (!Directory.Exists(dataDirectory))
-      {
-        Directory.CreateDirectory(dataDirectory);
-      }
       var connStr = Environment.GetEnvironmentVariable("CONNECTION_STRING");
       optionsBuilder
         .UseNpgsql(!string.IsNullOrWhiteSpace(connStr)
