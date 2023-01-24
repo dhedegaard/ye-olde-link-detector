@@ -31,35 +31,30 @@ client.MessageReceived += msg =>
     _ = Task.Run(async () =>
     {
       string reply = "";
-      lock (DataContext.DataContextLock)
+      using var db = new DataContext();
+      var existing = await db.Messages
+        .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
+        .OrderBy(e => e.Timestamp)
+        .ToListAsync();
+      if (existing.Any())
       {
-        using var db = new DataContext();
-        var existing = db.Messages
-          .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
-          .ToList()
-          // NOTE: For unknown reasons, ORDER BY takes forever, so we do it in
-          // memory.
-          .OrderBy(e => e.Timestamp);
-        if (existing.Any())
-        {
-          reply = Formatter.FormatOutputMessage(
-           userId: msg.Author.Id.ToString(),
-           url: url,
-           postCount: existing.Count(),
-           firstTimePosted: existing.First());
+        reply = Formatter.FormatOutputMessage(
+         userId: msg.Author.Id.ToString(),
+         url: url,
+         postCount: existing.Count,
+         firstTimePosted: existing.First());
 
-        }
-        db.Add(
-          new Message(
-            MessageId: msg.Id.ToString(),
-            Url: url,
-            ChannelId: msg.Channel.Id.ToString(),
-            Timestamp: msg.CreatedAt,
-            AuthorName: msg.Author.Username
-          )
-        );
-        db.SaveChanges();
       }
+      await db.AddAsync(
+        new Message(
+          MessageId: msg.Id.ToString(),
+          Url: url,
+          ChannelId: msg.Channel.Id.ToString(),
+          Timestamp: msg.CreatedAt,
+          AuthorName: msg.Author.Username
+        )
+      );
+      await db.SaveChangesAsync();
       if (!string.IsNullOrWhiteSpace(reply))
       {
         await msg.Channel.SendMessageAsync(text: reply);

@@ -36,25 +36,22 @@ namespace YeOldeLinkDetector
                   }
                   foreach (var url in FindUrlsInContent.FindUrls(message.Content))
                   {
-                    lock (DataContext.DataContextLock)
-                    {
-                      using var db = new DataContext();
+                    using var db = new DataContext();
 
-                      var existing = db.Find<Message>(message.Id.ToString());
-                      if (existing == null)
-                      {
-                        db.Add(
-                          new Message(
-                            MessageId: message.Id.ToString(),
-                            Url: url,
-                            ChannelId: message.Channel.Id.ToString(),
-                            Timestamp: message.CreatedAt,
-                            AuthorName: message.Author.Username
-                          )
-                        );
-                      }
-                      db.SaveChanges();
+                    var existing = await db.FindAsync<Message>(message.Id.ToString());
+                    if (existing == null)
+                    {
+                      await db.AddAsync(
+                        new Message(
+                          MessageId: message.Id.ToString(),
+                          Url: url,
+                          ChannelId: message.Channel.Id.ToString(),
+                          Timestamp: message.CreatedAt,
+                          AuthorName: message.Author.Username
+                        )
+                      );
                     }
+                    await db.SaveChangesAsync();
                   }
                 }
                 var lowestMessageId = messageIds.Min();

@@ -7,10 +7,6 @@ namespace YeOldeLinkDetector
 {
   public class DataContext : DbContext
   {
-    // TODO: Remove the lock stuff, after running postgres.
-    private static readonly object dataContextLock = new();
-    public static dynamic DataContextLock => dataContextLock;
-
     public DbSet<Message> Messages { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
