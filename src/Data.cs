@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace YeOldeLinkDetector
 {
   public class DataContext : DbContext
   {
+    // TODO: Remove the lock stuff, after running postgres.
     private static readonly object dataContextLock = new();
     public static dynamic DataContextLock => dataContextLock;
 
@@ -19,11 +20,16 @@ namespace YeOldeLinkDetector
       {
         Directory.CreateDirectory(dataDirectory);
       }
+      var connStr = Environment.GetEnvironmentVariable("CONNECTION_STRING");
       optionsBuilder
-        .UseSqlite(new SqliteConnectionStringBuilder
-        {
-          DataSource = Path.Join(dataDirectory, "data.sqlite"),
-        }.ToString())
+        .UseNpgsql(!string.IsNullOrWhiteSpace(connStr)
+          ? connStr
+          : new NpgsqlConnectionStringBuilder
+          {
+            ApplicationName = "ye-olde-link-detector",
+            Host = "localhost",
+            Database = "ye-olde-link-detector",
+          }.ToString())
         .EnableDetailedErrors()
         .LogTo(Console.WriteLine, LogLevel.Warning)
         .EnableThreadSafetyChecks();

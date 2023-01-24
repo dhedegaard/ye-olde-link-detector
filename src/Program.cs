@@ -8,11 +8,6 @@ if (string.IsNullOrWhiteSpace(TOKEN))
   throw new Exception("Missing TOKEN environment variable.");
 }
 
-{
-  using var db = new DataContext();
-  db.Database.ExecuteSql($"pragma journal_mode = 'wal';");
-}
-
 using var client = new DiscordSocketClient(new DiscordSocketConfig
 {
   GatewayIntents = Discord.GatewayIntents.Guilds

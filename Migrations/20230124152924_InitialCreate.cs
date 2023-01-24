@@ -15,11 +15,11 @@ namespace yeoldelinkdetector.Migrations
                 name: "Messages",
                 columns: table => new
                 {
-                    MessageId = table.Column<string>(type: "TEXT", nullable: false),
-                    Url = table.Column<string>(type: "TEXT", nullable: false),
-                    ChannelId = table.Column<string>(type: "TEXT", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    AuthorName = table.Column<string>(type: "TEXT", nullable: false)
+                    MessageId = table.Column<string>(type: "text", nullable: false),
+                    Url = table.Column<string>(type: "text", nullable: false),
+                    ChannelId = table.Column<string>(type: "text", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    AuthorName = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
