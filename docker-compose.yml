@@ -1,0 +1,25 @@
+version: "3"
+
+# Remember to change the CHANGE_ME strings.
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    environment:
+      - TOKEN=CHANGE_ME
+      - CONNECTION_STRING=Host=db; Port=5432; Username=postgres; Password=CHANGE_ME; Database=db
+    depends_on:
+      db:
+        condition: service_started
+  db:
+    image: postgres:15.1-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=CHANGE_ME
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=db
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+
+volumes:
+  db-volume:
