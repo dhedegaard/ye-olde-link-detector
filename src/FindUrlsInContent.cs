@@ -17,7 +17,7 @@ namespace YeOldeLinkDetector
       return from e in result.Captures
              select e.Value into e
              where !string.IsNullOrWhiteSpace(e)
-             select e;
+             select YoutubeTransform.Transform(e);
     }
   }
 }
