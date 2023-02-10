@@ -16,7 +16,7 @@ namespace YeOldeLinkDetector
           var hasAtLeastOneMessage = false;
           do
           {
-            Console.WriteLine($"  processing message chunks for guild ({guild.Name}) - channel ({channel.Name}) - lastMessageId: {lastMessageId}");
+            Console.WriteLine($"    processing message chunks for guild ({guild.Name}) - channel ({channel.Name}) - lastMessageId: {lastMessageId}");
             var messageIds = new HashSet<ulong>();
             await foreach (var chunk in
               lastMessageId == null || !lastMessageId.HasValue
