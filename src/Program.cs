@@ -39,10 +39,10 @@ client.MessageReceived += msg =>
       if (existing.Any())
       {
         reply = Formatter.FormatOutputMessage(
-         userId: msg.Author.Id.ToString(),
-         url: url,
-         postCount: existing.Count,
-         firstTimePosted: existing.First());
+          userId: msg.Author.Id.ToString(),
+          url: url,
+          postCount: existing.Count,
+          firstTimePosted: existing.First());
 
       }
       await db.AddAsync(
@@ -65,11 +65,7 @@ client.MessageReceived += msg =>
   return Task.CompletedTask;
 };
 
-client.GuildAvailable += (guild) =>
-{
-  InitialGuildImporter.Import(guild);
-  return Task.CompletedTask;
-};
+client.GuildAvailable += InitialGuildImporter.Import;
 
 client.Connected += async () =>
 {
