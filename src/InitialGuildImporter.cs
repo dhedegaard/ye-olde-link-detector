@@ -70,9 +70,10 @@ namespace YeOldeLinkDetector
                       )
                     );
                   }
-                  await db.SaveChangesAsync();
                 }
               }
+              await db.SaveChangesAsync();
+
               var lowestMessageId = messageIds.Min();
               lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
                 ? null
