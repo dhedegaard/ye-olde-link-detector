@@ -22,25 +22,6 @@ namespace yeoldelinkdetector.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("YeOldeLinkDetector.Guild", b =>
-                {
-                    b.Property<string>("GuildId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("LastMessageId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("LastMessageTimestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("GuildId");
-
-                    b.HasIndex("GuildId");
-
-                    b.ToTable("Guilds");
-                });
-
             modelBuilder.Entity("YeOldeLinkDetector.Message", b =>
                 {
                     b.Property<string>("MessageId")
