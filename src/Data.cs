@@ -8,6 +8,7 @@ namespace YeOldeLinkDetector
   public class DataContext : DbContext
   {
     public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<Guild> Guilds { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -31,10 +32,18 @@ namespace YeOldeLinkDetector
   [Index(nameof(Url), nameof(ChannelId), nameof(Timestamp))]
   public record Message(
     [property: Key]
-  string MessageId,
+    string MessageId,
     string Url,
     string ChannelId,
     DateTimeOffset Timestamp,
     string AuthorName
+  );
+
+  [Index(nameof(GuildId))]
+  public record Guild(
+    [property: Key]
+    string GuildId,
+    string LastMessageId,
+    DateTimeOffset LastMessageTimestamp
   );
 }
