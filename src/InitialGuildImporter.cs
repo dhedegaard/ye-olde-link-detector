@@ -10,10 +10,6 @@ namespace YeOldeLinkDetector
       using var db = new DataContext();
       foreach (var channel in guild.TextChannels)
       {
-        var guildElem = await db.Guilds
-          .Where(e => e.GuildId == guild.Id.ToString())
-          .FirstOrDefaultAsync();
-
         try
         {
           ulong? lastMessageId = null;
@@ -28,27 +24,8 @@ namespace YeOldeLinkDetector
                 : channel.GetMessagesAsync(dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
             )
             {
-              // TODO: If all the messages in the chunk is already known,
-              // stop fetching chunks as we probably have all the messages.
               foreach (var message in chunk)
               {
-                if (guildElem != null && message.Id.ToString() == guildElem.LastMessageId)
-                {
-                  Console.WriteLine($"  hit LastMessageId for guild: {guild.Name}");
-                  return;
-                }
-
-                // If there's no guild element, or the message is newer than the last message
-                // we've seen, update the guild element for the next boot.
-                if (guildElem == null || guildElem.LastMessageTimestamp < message.CreatedAt)
-                {
-                  guildElem = new Guild(
-                    GuildId: guild.Id.ToString(),
-                    LastMessageId: message.Id.ToString(),
-                    LastMessageTimestamp: message.CreatedAt);
-                  await db.AddAsync(guildElem);
-                }
-
                 messageIds.Add(message.Id);
                 hasAtLeastOneMessage = true;
                 if (message.Author.IsBot || string.IsNullOrWhiteSpace(message.Content))
@@ -57,19 +34,21 @@ namespace YeOldeLinkDetector
                 }
                 foreach (var url in FindUrlsInContent.FindUrls(message.Content))
                 {
-                  var existing = await db.FindAsync<Message>(message.Id.ToString());
-                  if (existing == null)
+                  var existing = await db.Messages.FirstOrDefaultAsync(e => e.MessageId == message.Id.ToString() && e.Url == url);
+                  if (existing != null)
                   {
-                    await db.AddAsync(
-                      new Message(
-                        MessageId: message.Id.ToString(),
-                        Url: url,
-                        ChannelId: message.Channel.Id.ToString(),
-                        Timestamp: message.CreatedAt,
-                        AuthorName: message.Author.Username
-                      )
-                    );
+                    Console.WriteLine($"  Stopping load for guild/channel ({guild.Name} // {channel.Name}) as message with ID + URL already exists: {message.Id} - {url}");
+                    return;
                   }
+                  await db.AddAsync(
+                    new Message(
+                      MessageId: message.Id.ToString(),
+                      Url: url,
+                      ChannelId: message.Channel.Id.ToString(),
+                      Timestamp: message.CreatedAt,
+                      AuthorName: message.Author.Username
+                    )
+                  );
                 }
               }
               await db.SaveChangesAsync();
@@ -78,7 +57,6 @@ namespace YeOldeLinkDetector
               lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
                 ? null
                 : lowestMessageId;
-              Console.WriteLine($"  done processing chunk for guild ({guild.Name}) - channel ({channel.Name}) - chunk: {chunk.Count} - lastMessageId: {lastMessageId}");
             }
           } while (hasAtLeastOneMessage && lastMessageId.HasValue);
           Console.WriteLine("no more messages for channel: " + channel.Name + " (" + channel.Id + ")");
