@@ -53,6 +53,13 @@ namespace YeOldeLinkDetector
               }
               await db.SaveChangesAsync();
 
+              if (!messageIds.Any())
+              {
+                // No messages in the current chunk, stop fetching messages for
+                // the given channel.
+                break;
+              }
+
               var lowestMessageId = messageIds.Min();
               lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
                 ? null
