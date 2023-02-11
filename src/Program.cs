@@ -69,7 +69,7 @@ client.GuildAvailable += (guild) =>
 {
   _ = Task.Run(() => InitialGuildImporter.Import(guild));
   return Task.CompletedTask;
-}
+};
 
 client.Connected += async () =>
 {
