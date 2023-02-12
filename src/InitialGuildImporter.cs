@@ -17,22 +17,24 @@ namespace YeOldeLinkDetector
             : channel.GetMessagesAsync(dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
         )
         {
-          var messageIds = new HashSet<ulong>();
-          foreach (var message in chunk.Where(message => !message.Author.IsBot && !string.IsNullOrWhiteSpace(message.Content)))
-          {
-            hasAtLeastOneMessage = true;
-            messageIds.Add(message.Id);
-            yield return message;
-          }
+          var messages = chunk
+            .Where(message => !message.Author.IsBot && !string.IsNullOrWhiteSpace(message.Content))
+            .ToList();
+          hasAtLeastOneMessage = messages.Any();
 
-          if (!messageIds.Any())
+          if (!messages.Any())
           {
             // No messages in the current chunk, stop fetching messages for
             // the given channel.
             yield break;
           }
 
-          var lowestMessageId = messageIds.Min();
+          foreach (var message in messages)
+          {
+            yield return message;
+          }
+
+          var lowestMessageId = messages.Min(message => message.Id);
           lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
             ? null
             : lowestMessageId;
