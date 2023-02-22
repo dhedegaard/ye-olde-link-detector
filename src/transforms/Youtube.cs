@@ -1,41 +1,40 @@
 using System.Web;
 
-namespace YeOldeLinkDetector
+namespace YeOldeLinkDetector;
+
+public static class YoutubeTransform
 {
-  public static class YoutubeTransform
+  public static string Transform(string urlStr)
   {
-    public static string Transform(string urlStr)
+    // Skip all non-youtube related domains.
+    if (!urlStr.Contains("youtu.be/") && !urlStr.Contains("youtube.com/watch?"))
     {
-      // Skip all non-youtube related domains.
-      if (!urlStr.Contains("youtu.be/") && !urlStr.Contains("youtube.com/watch?"))
-      {
-        return urlStr;
-      }
-      var urlObj = new UriBuilder(urlStr);
-      var queryObj = HttpUtility.ParseQueryString(urlObj.Query);
-
-      // Convert youtu.be -> youtube.com, move the videoId from the path to a GET
-      // parameter.
-      if (urlObj.Host == "youtu.be")
-      {
-        urlObj.Host = "www.youtube.com";
-        var videoId = string.Concat(urlObj.Path.Skip(1));
-        urlObj.Path = "/watch";
-        queryObj.Set("v", videoId);
-        urlObj.Query = queryObj.ToString();
-      }
-
-      // Implicitly, remove any GET parameters not being "v".
-      queryObj.AllKeys
-        .Where(e => e != "v")
-        .ToList()
-        .ForEach(e => queryObj.Remove(e));
-
-      urlObj.Query = queryObj.ToString();
-      // NOTE: This is sort of a hack, but setting the port to -1 removes it
-      // from the output string.
-      urlObj.Port = -1;
-      return urlObj.ToString();
+      return urlStr;
     }
+    var urlObj = new UriBuilder(urlStr);
+    var queryObj = HttpUtility.ParseQueryString(urlObj.Query);
+
+    // Convert youtu.be -> youtube.com, move the videoId from the path to a GET
+    // parameter.
+    if (urlObj.Host == "youtu.be")
+    {
+      urlObj.Host = "www.youtube.com";
+      var videoId = string.Concat(urlObj.Path.Skip(1));
+      urlObj.Path = "/watch";
+      queryObj.Set("v", videoId);
+      urlObj.Query = queryObj.ToString();
+    }
+
+    // Implicitly, remove any GET parameters not being "v".
+    queryObj.AllKeys
+      .Where(e => e != "v")
+      .ToList()
+      .ForEach(e => queryObj.Remove(e));
+
+    urlObj.Query = queryObj.ToString();
+    // NOTE: This is sort of a hack, but setting the port to -1 removes it
+    // from the output string.
+    urlObj.Port = -1;
+    return urlObj.ToString();
   }
 }
