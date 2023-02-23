@@ -32,18 +32,18 @@ client.MessageReceived += msg =>
     {
       string reply = "";
       using var db = new DataContext();
-      var existing = await db.Messages
+      var existing = (await db.Messages
         .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString())
         .OrderBy(e => e.Timestamp)
-        .ToListAsync();
+        .ToListAsync())
+        .AsReadOnly();
       if (existing.Any())
       {
         reply = Formatter.FormatOutputMessage(
           userId: msg.Author.Id.ToString(),
           url: url,
           postCount: existing.Count,
-          firstTimePosted: existing.First());
-
+          firstTimePosted: existing[0]);
       }
       await db.AddAsync(
         new Message(

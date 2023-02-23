@@ -27,11 +27,10 @@ public class DataContext : DbContext
   }
 }
 
-
 [Index(nameof(Url), nameof(ChannelId), nameof(Timestamp))]
 public record Message(
   [property: Key]
-    string MessageId,
+  string MessageId,
   string Url,
   string ChannelId,
   DateTimeOffset Timestamp,

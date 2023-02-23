@@ -14,12 +14,13 @@ public static class InitialGuildImporter
       await foreach (var chunk in
         lastMessageId == null || !lastMessageId.HasValue
           ? channel.GetMessagesAsync()
-          : channel.GetMessagesAsync(dir: Discord.Direction.Before, fromMessageId: lastMessageId.Value)
+          : channel.GetMessagesAsync(fromMessageId: lastMessageId.Value, dir: Discord.Direction.Before)
       )
       {
         var messages = chunk
           .Where(message => !message.Author.IsBot && !string.IsNullOrWhiteSpace(message.Content))
-          .ToList();
+          .ToList()
+          .AsReadOnly();
         hasAtLeastOneMessage = messages.Any();
 
         if (!messages.Any())
@@ -35,7 +36,7 @@ public static class InitialGuildImporter
         }
 
         var lowestMessageId = messages.Min(message => message.Id);
-        lastMessageId = lastMessageId.HasValue && lastMessageId.Value == lowestMessageId
+        lastMessageId = lastMessageId == lowestMessageId
           ? null
           : lowestMessageId;
       }
@@ -74,7 +75,6 @@ public static class InitialGuildImporter
             if (added % 50 == 0)
             {
               Console.WriteLine($"    Added {added} messages for channel: {channel.Name} ({channel.Id})");
-
             }
           }
         }
@@ -88,7 +88,6 @@ public static class InitialGuildImporter
           Console.WriteLine("  Missing permission to read channel " + channel.Name + " (" + channel.Id + ")");
         }
       }
-
     }
   }
 }
