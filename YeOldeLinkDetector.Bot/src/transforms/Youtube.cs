@@ -1,6 +1,6 @@
 using System.Web;
 
-namespace YeOldeLinkDetector;
+namespace YeOldeLinkDetector.Bot.Transforms;
 
 public static class YoutubeTransform
 {
