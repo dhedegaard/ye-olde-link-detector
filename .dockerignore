@@ -1,8 +1,9 @@
-bin
-obj
+*/bin
+*/obj
 .vscode
 data
 .git
+out
 
 Dockerfile
 docker-compose.yml

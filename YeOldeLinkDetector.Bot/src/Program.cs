@@ -1,6 +1,6 @@
 ﻿using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using YeOldeLinkDetector;
+using YeOldeLinkDetector.Bot;
 using YeOldeLinkDetector.Data;
 
 var TOKEN = Environment.GetEnvironmentVariable("TOKEN");

@@ -1,7 +1,7 @@
 using Humanizer;
 using YeOldeLinkDetector.Data;
 
-namespace YeOldeLinkDetector;
+namespace YeOldeLinkDetector.Bot;
 
 public static class Formatter
 {

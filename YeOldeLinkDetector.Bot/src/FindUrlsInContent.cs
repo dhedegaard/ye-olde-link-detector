@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace YeOldeLinkDetector;
+namespace YeOldeLinkDetector.Bot;
 
 public static partial class FindUrlsInContent
 {

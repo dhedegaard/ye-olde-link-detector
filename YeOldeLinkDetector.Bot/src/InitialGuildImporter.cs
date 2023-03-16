@@ -2,7 +2,7 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using YeOldeLinkDetector.Data;
 
-namespace YeOldeLinkDetector;
+namespace YeOldeLinkDetector.Bot;
 
 public static class InitialGuildImporter
 {
