@@ -1,4 +1,5 @@
 using Humanizer;
+using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector;
 

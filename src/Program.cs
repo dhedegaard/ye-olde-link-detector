@@ -1,6 +1,7 @@
 ﻿using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using YeOldeLinkDetector;
+using YeOldeLinkDetector.Data;
 
 var TOKEN = Environment.GetEnvironmentVariable("TOKEN");
 if (string.IsNullOrWhiteSpace(TOKEN))

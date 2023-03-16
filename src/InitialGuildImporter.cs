@@ -1,5 +1,6 @@
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector;
 
