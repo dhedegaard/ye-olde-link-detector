@@ -15,9 +15,9 @@ public static partial class FindUrlsInContent
       return Enumerable.Empty<string>();
     }
     var result = UrlRegex().Match(content);
-    return from e in result.Captures
-           select e.Value into e
-           where !string.IsNullOrWhiteSpace(e)
-           select YoutubeTransform.Transform(e);
+    return result.Captures
+      .Select(capture => capture.Value)
+      .Where(value => !string.IsNullOrWhiteSpace(value))
+      .Select(value => YoutubeTransform.Transform(value));
   }
 }
