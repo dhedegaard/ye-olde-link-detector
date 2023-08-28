@@ -3,4 +3,5 @@ obj
 .vscode
 /data
 /out
+.DS_Store
 
