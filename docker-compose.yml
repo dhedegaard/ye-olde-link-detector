@@ -12,7 +12,7 @@ services:
       db:
         condition: service_started
   db:
-    image: postgres:15.1-alpine
+    image: postgres:15-alpine
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=CHANGE_ME
