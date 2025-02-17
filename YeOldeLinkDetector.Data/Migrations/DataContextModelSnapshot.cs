@@ -8,7 +8,7 @@ using YeOldeLinkDetector.Data;
 
 #nullable disable
 
-namespace yeoldelinkdetector.Migrations
+namespace YeOldeLinkDetector.Migrations
 {
     [DbContext(typeof(DataContext))]
     partial class DataContextModelSnapshot : ModelSnapshot

@@ -9,7 +9,7 @@ using YeOldeLinkDetector.Data;
 
 #nullable disable
 
-namespace yeoldelinkdetector.Migrations
+namespace YeOldeLinkDetector.Migrations
 {
     [DbContext(typeof(DataContext))]
     [Migration("20230124152924_InitialCreate")]

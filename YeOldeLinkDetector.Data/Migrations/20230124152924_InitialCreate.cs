@@ -3,13 +3,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace yeoldelinkdetector.Migrations
+namespace YeOldeLinkDetector.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
+    /// <inheritdoc />
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "<Pending>")]
+    protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
                 name: "Messages",
@@ -29,14 +30,16 @@ namespace yeoldelinkdetector.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_Url_ChannelId_Timestamp",
                 table: "Messages",
-                columns: new[] { "Url", "ChannelId", "Timestamp" });
+                columns: ["Url", "ChannelId", "Timestamp"]);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+#pragma warning disable CA1062 // Validate arguments of public methods
             migrationBuilder.DropTable(
                 name: "Messages");
+#pragma warning restore CA1062 // Validate arguments of public methods
         }
     }
 }
