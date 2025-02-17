@@ -1,10 +1,11 @@
+using System.Globalization;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
 
-public static class InitialGuildImporter
+internal static class InitialGuildImporter
 {
   private static async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(SocketTextChannel channel)
   {
@@ -13,18 +14,18 @@ public static class InitialGuildImporter
     do
     {
       await foreach (var chunk in
-        lastMessageId == null || !lastMessageId.HasValue
+        (lastMessageId == null || !lastMessageId.HasValue
           ? channel.GetMessagesAsync()
-          : channel.GetMessagesAsync(fromMessageId: lastMessageId.Value, dir: Discord.Direction.Before)
+          : channel.GetMessagesAsync(fromMessageId: lastMessageId.Value, dir: Discord.Direction.Before)).ConfigureAwait(false)
       )
       {
         var messages = chunk
           .Where(message => !message.Author.IsBot && !string.IsNullOrWhiteSpace(message.Content))
           .ToList()
           .AsReadOnly();
-        hasAtLeastOneMessage = messages.Any();
+        hasAtLeastOneMessage = messages.Count != 0;
 
-        if (!messages.Any())
+        if (messages.Count == 0)
         {
           // No messages in the current chunk, stop fetching messages for
           // the given channel.
@@ -53,11 +54,11 @@ public static class InitialGuildImporter
       {
         Console.WriteLine($"    processing messages for guild ({guild.Name}) - channel ({channel.Name})");
         var added = 0;
-        await foreach (var message in GetAllNonEmptyNonBotMessagesAsync(channel))
+        await foreach (var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false))
         {
           foreach (var url in FindUrlsInContent.FindUrls(message.Content))
           {
-            var existing = await db.Messages.FirstOrDefaultAsync(e => e.MessageId == message.Id.ToString() && e.Url == url);
+            var existing = await db.Messages.FirstOrDefaultAsync(e => e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url).ConfigureAwait(false);
             if (existing != null)
             {
               Console.WriteLine($"  Stopping load for guild/channel ({guild.Name} // {channel.Name}) as message with ID + URL already exists: {message.Id} - {url}");
@@ -65,13 +66,13 @@ public static class InitialGuildImporter
             }
             await db.AddAsync(
               new Message(
-                MessageId: message.Id.ToString(),
+                MessageId: message.Id.ToString(CultureInfo.InvariantCulture),
                 Url: url,
-                ChannelId: message.Channel.Id.ToString(),
+                ChannelId: message.Channel.Id.ToString(CultureInfo.InvariantCulture),
                 Timestamp: message.CreatedAt,
                 AuthorName: message.Author.Username
               )
-            );
+            ).ConfigureAwait(false);
             added++;
             if (added % 50 == 0)
             {
@@ -79,7 +80,7 @@ public static class InitialGuildImporter
             }
           }
         }
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync().ConfigureAwait(false);
         Console.WriteLine("  No more messages for channel: " + channel.Name + " (" + channel.Id + ")");
       }
       catch (Discord.Net.HttpException e)

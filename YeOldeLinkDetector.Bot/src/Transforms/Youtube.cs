@@ -2,12 +2,12 @@ using System.Web;
 
 namespace YeOldeLinkDetector.Bot.Transforms;
 
-public static class YoutubeTransform
+internal static class YoutubeTransform
 {
-  public static string Transform(string urlStr)
+  internal static string Transform(string urlStr)
   {
     // Skip all non-youtube related domains.
-    if (!urlStr.Contains("youtu.be/") && !urlStr.Contains("youtube.com/watch?"))
+    if (!urlStr.Contains("youtu.be/", StringComparison.InvariantCultureIgnoreCase) && !urlStr.Contains("youtube.com/watch?", StringComparison.InvariantCultureIgnoreCase))
     {
       return urlStr;
     }
