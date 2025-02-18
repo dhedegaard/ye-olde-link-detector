@@ -1,12 +1,7 @@
 ﻿using System.Globalization;
-using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
+using Serilog;
 using YeOldeLinkDetector.Bot;
 using YeOldeLinkDetector.Data;
-
-
-
 
 var TOKEN = Environment.GetEnvironmentVariable("TOKEN");
 if (string.IsNullOrWhiteSpace(TOKEN))
@@ -14,12 +9,14 @@ if (string.IsNullOrWhiteSpace(TOKEN))
   throw new InvalidOperationException("Missing TOKEN environment variable.");
 }
 
-
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging
   .ClearProviders()
-  .AddSimpleConsole();
+  .AddSerilog(new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
+    .CreateLogger());
 
 builder.Services
   .AddDbContext<DataContext>()
