@@ -1,8 +1,12 @@
 ﻿using System.Globalization;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using YeOldeLinkDetector.Bot;
 using YeOldeLinkDetector.Data;
+
+
+
 
 var TOKEN = Environment.GetEnvironmentVariable("TOKEN");
 if (string.IsNullOrWhiteSpace(TOKEN))
@@ -10,81 +14,19 @@ if (string.IsNullOrWhiteSpace(TOKEN))
   throw new InvalidOperationException("Missing TOKEN environment variable.");
 }
 
-using var client = new DiscordSocketClient(new DiscordSocketConfig
-{
-  GatewayIntents = Discord.GatewayIntents.Guilds
-    | Discord.GatewayIntents.GuildMessages
-    | Discord.GatewayIntents.MessageContent,
-});
 
-client.Log += (msg) =>
-{
-  Console.WriteLine($"Discord.Net LOG: {msg}");
-  return Task.CompletedTask;
-};
-client.MessageReceived += msg =>
-{
-  if (msg.Author.IsBot)
-  {
-    return Task.CompletedTask;
-  }
-  foreach (var url in FindUrlsInContent.FindUrls(msg.Content))
-  {
-    _ = Task.Run(async () =>
-    {
-      string reply = "";
-      using var db = new DataContext();
-      var existing = (await db.Messages
-        .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture))
-        .OrderBy(e => e.Timestamp)
-        .ToListAsync().ConfigureAwait(false))
-        .AsReadOnly();
-      if (existing.Count != 0)
-      {
-        reply = Formatter.FormatOutputMessage(
-          userId: msg.Author.Id.ToString(CultureInfo.InvariantCulture),
-          url: url,
-          postCount: existing.Count,
-          firstTimePosted: existing[0]);
-      }
-      await db.AddAsync(
-        new Message(
-          MessageId: msg.Id.ToString(CultureInfo.InvariantCulture),
-          Url: url,
-          ChannelId: msg.Channel.Id.ToString(CultureInfo.InvariantCulture),
-          Timestamp: msg.CreatedAt,
-          AuthorName: msg.Author.Username
-        )
-      ).ConfigureAwait(false);
-      await db.SaveChangesAsync().ConfigureAwait(false);
-      if (!string.IsNullOrWhiteSpace(reply))
-      {
-        await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
-        Console.WriteLine("REPLY: " + reply);
-      }
-    });
-  }
-  return Task.CompletedTask;
-};
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
-client.GuildAvailable += (guild) =>
-{
-  _ = Task.Run(() => InitialGuildImporter.Import(guild));
-  return Task.CompletedTask;
-};
+builder.Logging
+  .ClearProviders()
+  .AddSimpleConsole();
 
-client.Connected += async () =>
-{
-  await client.SetActivityAsync(new Discord.Game("Waiting for illegal links", Discord.ActivityType.CustomStatus)).ConfigureAwait(false);
-  Console.WriteLine("Connected");
-};
-client.Disconnected += (ex) =>
-{
-  Console.WriteLine("Disconnected, rethrowing exception");
-  throw ex;
-};
+builder.Services
+  .AddDbContext<DataContext>()
+  .AddHostedService<DiscordWorker>(sp => new DiscordWorker(TOKEN, sp.GetRequiredService<DataContext>()));
 
-await client.LoginAsync(Discord.TokenType.Bot, TOKEN, true).ConfigureAwait(false);
-await client.StartAsync().ConfigureAwait(false);
+using var cts = new CancellationTokenSource();
 
-await Task.Delay(-1).ConfigureAwait(false);
+using var host = builder.Build();
+await host.RunAsync(cts.Token).ConfigureAwait(false);
+

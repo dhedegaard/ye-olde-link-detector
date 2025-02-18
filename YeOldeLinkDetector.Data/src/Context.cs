@@ -19,6 +19,7 @@ public class DataContext : DbContext
           ApplicationName = "ye-olde-link-detector",
           Host = "localhost",
           Database = "ye-olde-link-detector",
+          IncludeErrorDetail = true,
         }.ToString())
       .EnableDetailedErrors()
       .LogTo(Console.WriteLine, LogLevel.Warning)
