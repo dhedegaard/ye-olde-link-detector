@@ -3,7 +3,6 @@ using Serilog;
 using YeOldeLinkDetector.Bot;
 using YeOldeLinkDetector.Data;
 
-
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging

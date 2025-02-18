@@ -1,11 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
 
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes")]
 internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, ConfigurationService configurationService, DataContext db, InitialGuildImporter initialGuildImporter) : BackgroundService
 {
   private static readonly Action<ILogger, string, Exception?> _logDiscordNet =

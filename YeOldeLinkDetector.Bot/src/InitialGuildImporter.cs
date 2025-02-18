@@ -1,7 +1,6 @@
 using System.Globalization;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
@@ -81,7 +80,7 @@ internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger,
             var existing = await db.Messages.FirstOrDefaultAsync(e => e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url).ConfigureAwait(false);
             if (existing != null)
             {
-              _logDuplicateFound(logger, guild.Name, channel.Name, message.Id.ToString(), url, null);
+              _logDuplicateFound(logger, guild.Name, channel.Name, message.Id.ToString(CultureInfo.InvariantCulture), url, null);
               return;
             }
             await db.AddAsync(

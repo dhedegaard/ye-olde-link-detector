@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace YeOldeLinkDetector.Bot;
 
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes")]
 internal sealed class ConfigurationService()
 {
   private readonly string? _token = Environment.GetEnvironmentVariable("TOKEN");
