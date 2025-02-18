@@ -1,16 +1,14 @@
 using System.Globalization;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
 
-internal sealed class DiscordWorker(string Token, DataContext db) : BackgroundService
+internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, ConfigurationService configurationService, DataContext db, InitialGuildImporter initialGuildImporter) : BackgroundService
 {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-
     using var client = new DiscordSocketClient(new DiscordSocketConfig
     {
       GatewayIntents = Discord.GatewayIntents.Guilds
@@ -18,9 +16,15 @@ internal sealed class DiscordWorker(string Token, DataContext db) : BackgroundSe
         | Discord.GatewayIntents.MessageContent,
     });
 
+    // Register cancellation token to stop the client
+    stoppingToken.Register(() =>
+    {
+      _ = client.StopAsync();
+    });
+
     client.Log += (msg) =>
     {
-      Console.WriteLine($"Discord.Net LOG: {msg}");
+      logger.LogDebug("Discord.Net LOG: {msg}", msg);
       return Task.CompletedTask;
     };
     client.MessageReceived += msg =>
@@ -60,7 +64,7 @@ internal sealed class DiscordWorker(string Token, DataContext db) : BackgroundSe
           if (!string.IsNullOrWhiteSpace(reply))
           {
             await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
-            Console.WriteLine("REPLY: " + reply);
+            logger.LogInformation("REPLY: {Reply}", reply);
           }
         });
       }
@@ -69,24 +73,41 @@ internal sealed class DiscordWorker(string Token, DataContext db) : BackgroundSe
 
     client.GuildAvailable += (guild) =>
     {
-      _ = Task.Run(() => InitialGuildImporter.Import(guild));
+      _ = Task.Run(() => initialGuildImporter.Import(guild));
       return Task.CompletedTask;
     };
 
     client.Connected += async () =>
     {
       await client.SetActivityAsync(new Discord.Game("Waiting for illegal links", Discord.ActivityType.CustomStatus)).ConfigureAwait(false);
-      Console.WriteLine("Connected");
+      logger.LogInformation("Connected");
     };
     client.Disconnected += (ex) =>
     {
-      Console.WriteLine("Disconnected, rethrowing exception");
-      throw ex;
+      if (!stoppingToken.IsCancellationRequested)
+      {
+        logger.LogError(ex, "Disconnected unexpectedly, rethrowing exception");
+        throw ex;
+      }
+      logger.LogDebug("Disconnected due to shutdown");
+      return Task.CompletedTask;
     };
 
-    await client.LoginAsync(Discord.TokenType.Bot, Token, true).ConfigureAwait(false);
+    await client.LoginAsync(
+      tokenType: Discord.TokenType.Bot,
+      token: configurationService.Token,
+      validateToken: true).ConfigureAwait(false);
     await client.StartAsync().ConfigureAwait(false);
 
-    await Task.Delay(-1, stoppingToken).ConfigureAwait(false);
+    // Wait until the token is cancelled
+    try
+    {
+      await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Graceful shutdown
+      await client.StopAsync().ConfigureAwait(false);
+    }
   }
 }

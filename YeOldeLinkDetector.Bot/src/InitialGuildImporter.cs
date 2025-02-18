@@ -5,9 +5,9 @@ using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
 
-internal static class InitialGuildImporter
+internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger, DataContext db)
 {
-  private static async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(SocketTextChannel channel)
+  private async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(SocketTextChannel channel)
   {
     var hasAtLeastOneMessage = false;
     ulong? lastMessageId = null;
@@ -45,14 +45,13 @@ internal static class InitialGuildImporter
     } while (hasAtLeastOneMessage && lastMessageId.HasValue);
   }
 
-  public static async Task Import(SocketGuild guild)
+  public async Task Import(SocketGuild guild)
   {
-    using var db = new DataContext();
     foreach (var channel in guild.TextChannels)
     {
       try
       {
-        Console.WriteLine($"    processing messages for guild ({guild.Name}) - channel ({channel.Name})");
+        logger.LogInformation("    processing messages for guild ({GuildName}) - channel ({ChannelName})", guild.Name, channel.Name);
         var added = 0;
         await foreach (var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false))
         {
@@ -61,7 +60,7 @@ internal static class InitialGuildImporter
             var existing = await db.Messages.FirstOrDefaultAsync(e => e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url).ConfigureAwait(false);
             if (existing != null)
             {
-              Console.WriteLine($"  Stopping load for guild/channel ({guild.Name} // {channel.Name}) as message with ID + URL already exists: {message.Id} - {url}");
+              logger.LogInformation("  Stopping load for guild/channel ({GuildName} // {ChannelName}) as message with ID + URL already exists: {MessageId} - {Url}", guild.Name, channel.Name, message.Id, url);
               return;
             }
             await db.AddAsync(
@@ -76,18 +75,18 @@ internal static class InitialGuildImporter
             added++;
             if (added % 50 == 0)
             {
-              Console.WriteLine($"    Added {added} messages for channel: {channel.Name} ({channel.Id})");
+              logger.LogInformation("    Added {Added} messages for channel: {ChannelName} ({ChannelId})", added, channel.Name, channel.Id);
             }
           }
         }
         await db.SaveChangesAsync().ConfigureAwait(false);
-        Console.WriteLine("  No more messages for channel: " + channel.Name + " (" + channel.Id + ")");
+        logger.LogInformation("  No more messages for channel: {ChannelName} ({ChannelId})", channel.Name, channel.Id);
       }
       catch (Discord.Net.HttpException e)
       {
         if (((int)e.HttpCode) == 50001)
         {
-          Console.WriteLine("  Missing permission to read channel " + channel.Name + " (" + channel.Id + ")");
+          logger.LogInformation("  Missing permission to read channel {ChannelName} ({ChannelId})", channel.Name, channel.Id);
         }
       }
     }

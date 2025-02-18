@@ -3,11 +3,6 @@ using Serilog;
 using YeOldeLinkDetector.Bot;
 using YeOldeLinkDetector.Data;
 
-var TOKEN = Environment.GetEnvironmentVariable("TOKEN");
-if (string.IsNullOrWhiteSpace(TOKEN))
-{
-  throw new InvalidOperationException("Missing TOKEN environment variable.");
-}
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -20,7 +15,9 @@ builder.Logging
 
 builder.Services
   .AddDbContext<DataContext>()
-  .AddHostedService<DiscordWorker>(sp => new DiscordWorker(TOKEN, sp.GetRequiredService<DataContext>()));
+  .AddScoped<ConfigurationService>()
+  .AddScoped<InitialGuildImporter>()
+  .AddHostedService<DiscordWorker>();
 
 using var cts = new CancellationTokenSource();
 
