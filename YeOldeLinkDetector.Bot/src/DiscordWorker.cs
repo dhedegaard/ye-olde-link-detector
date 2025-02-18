@@ -110,17 +110,17 @@ internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, Configuration
       tokenType: Discord.TokenType.Bot,
       token: configurationService.Token,
       validateToken: true).ConfigureAwait(false);
-    await client.StartAsync().ConfigureAwait(false);
+    while (!stoppingToken.IsCancellationRequested)
+    {
+      try
+      {
+        await client.StartAsync().ConfigureAwait(false);
+        await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+      }
+      catch (TaskCanceledException) { }
+    }
 
-    // Wait until the token is cancelled
-    try
-    {
-      await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
-    }
-    catch (OperationCanceledException)
-    {
-      // Graceful shutdown
-      await client.StopAsync().ConfigureAwait(false);
-    }
+    // Graceful shutdown
+    await client.StopAsync().ConfigureAwait(false);
   }
 }
