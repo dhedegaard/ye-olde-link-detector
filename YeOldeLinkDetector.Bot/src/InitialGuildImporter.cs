@@ -5,6 +5,7 @@ using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes")]
 internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger, DataContext db)
 {
   private static readonly Action<ILogger, string, string, Exception?> _logProcessingChannel =
