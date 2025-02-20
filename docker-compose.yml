@@ -1,10 +1,8 @@
 # Remember to change the CHANGE_ME strings.
 services:
   bot:
-    # build: .
-    image: ghcr.io/dhedegaard/ye-olde-link-detector:main
-    # TODO: Later, make it buildable on arm64 as well.
-    platform: linux/amd64
+    build: .
+    # image: ghcr.io/dhedegaard/ye-olde-link-detector:main
     restart: unless-stopped
     environment:
       - TOKEN=${TOKEN:-CHANGE_ME}
