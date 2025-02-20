@@ -1,11 +1,14 @@
 # Remember to change the CHANGE_ME strings.
 services:
   bot:
-    build: .
+    # build: .
+    image: ghcr.io/dhedegaard/ye-olde-link-detector:main
+    # TODO: Later, make it buildable on arm64 as well.
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       - TOKEN=${TOKEN:-CHANGE_ME}
-      - CONNECTION_STRING=Host=db; Port=5432; Username=postgres; Password=CHANGE_ME; Database=db
+      - CONNECTION_STRING=${CONNECTION_STRING:-Host=db; Port=5432; Username=postgres; Password=CHANGE_ME; Database=db}
     depends_on:
       db:
         condition: service_started
@@ -13,9 +16,9 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      - POSTGRES_PASSWORD=CHANGE_ME
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=db
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-CHANGE_ME}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-db}
     volumes:
       - db-volume:/var/lib/postgresql/data
 
