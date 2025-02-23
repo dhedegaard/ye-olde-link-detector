@@ -10,6 +10,10 @@ services:
     depends_on:
       db:
         condition: service_started
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
   db:
     image: postgres:15-alpine
     restart: unless-stopped
