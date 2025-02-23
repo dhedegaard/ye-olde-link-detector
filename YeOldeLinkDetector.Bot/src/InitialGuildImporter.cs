@@ -6,7 +6,7 @@ using YeOldeLinkDetector.Data;
 namespace YeOldeLinkDetector.Bot;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes")]
-internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger, DataContext db)
+internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger, IDbContextFactory<DataContext> dbFactory)
 {
   private static readonly Action<ILogger, string, string, Exception?> _logProcessingChannel =
       LoggerMessage.Define<string, string>(LogLevel.Information, new EventId(0, "Processing"),
@@ -66,12 +66,14 @@ internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger,
     } while (hasAtLeastOneMessage && lastMessageId.HasValue);
   }
 
+  [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "<Pending>")]
   public async Task Import(SocketGuild guild)
   {
     foreach (var channel in guild.TextChannels)
     {
       try
       {
+        await using var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
         _logProcessingChannel(logger, guild.Name, channel.Name, null);
         var added = 0;
         await foreach (var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false))

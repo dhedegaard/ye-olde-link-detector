@@ -13,7 +13,7 @@ builder.Logging
     .CreateLogger());
 
 builder.Services
-  .AddDbContext<DataContext>()
+  .AddDbContextFactory<DataContext>()
   .AddScoped<ConfigurationService>()
   .AddScoped<InitialGuildImporter>()
   .AddHostedService<DiscordWorker>();

@@ -7,7 +7,7 @@ using YeOldeLinkDetector.Data;
 namespace YeOldeLinkDetector.Bot;
 
 [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes")]
-internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, ConfigurationService configurationService, DataContext db, InitialGuildImporter initialGuildImporter) : BackgroundService
+internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, ConfigurationService configurationService, IDbContextFactory<DataContext> dbFactory, InitialGuildImporter initialGuildImporter) : BackgroundService
 {
   private static readonly Action<ILogger, string, Exception?> _logDiscordNet =
       LoggerMessage.Define<string>(LogLevel.Debug, new EventId(0, "DiscordNet"), "Discord.Net LOG: {Message}");
@@ -20,6 +20,7 @@ internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, Configuration
   private static readonly Action<ILogger, Exception?> _logShutdown =
       LoggerMessage.Define(LogLevel.Debug, new EventId(4, "Shutdown"), "Disconnected due to shutdown");
 
+  [SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "<Pending>")]
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
     using var client = new DiscordSocketClient(new DiscordSocketConfig
@@ -50,6 +51,7 @@ internal sealed class DiscordWorker(ILogger<DiscordWorker> logger, Configuration
       {
         _ = Task.Run(async () =>
         {
+          await using var db = await dbFactory.CreateDbContextAsync(stoppingToken).ConfigureAwait(false);
           string reply = "";
           var existing = (await db.Messages
             .Where(e => e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture))
