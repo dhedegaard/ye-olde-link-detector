@@ -5,39 +5,73 @@ using YeOldeLinkDetector.Data;
 
 namespace YeOldeLinkDetector.Bot;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes")]
-internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger, IDbContextFactory<DataContext> dbFactory)
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+  "Performance",
+  "CA1812:Avoid uninstantiated internal classes"
+)]
+internal sealed class InitialGuildImporter(
+  ILogger<InitialGuildImporter> logger,
+  IDbContextFactory<DataContext> dbFactory
+)
 {
   private static readonly Action<ILogger, string, string, Exception?> _logProcessingChannel =
-      LoggerMessage.Define<string, string>(LogLevel.Information, new EventId(0, "Processing"),
-      "    processing messages for guild ({GuildName}) - channel ({ChannelName})");
+    LoggerMessage.Define<string, string>(
+      LogLevel.Information,
+      new EventId(0, "Processing"),
+      "    processing messages for guild ({GuildName}) - channel ({ChannelName})"
+    );
 
-  private static readonly Action<ILogger, string, string, string, string, Exception?> _logDuplicateFound =
-      LoggerMessage.Define<string, string, string, string>(LogLevel.Information, new EventId(1, "Duplicate"),
-      "  Stopping load for guild/channel ({GuildName} // {ChannelName}) as message with ID + URL already exists: {MessageId} - {Url}");
+  private static readonly Action<
+    ILogger,
+    string,
+    string,
+    string,
+    string,
+    Exception?
+  > _logDuplicateFound = LoggerMessage.Define<string, string, string, string>(
+    LogLevel.Information,
+    new EventId(1, "Duplicate"),
+    "  Stopping load for guild/channel ({GuildName} // {ChannelName}) as message with ID + URL already exists: {MessageId} - {Url}"
+  );
 
   private static readonly Action<ILogger, int, string, ulong, Exception?> _logProgress =
-      LoggerMessage.Define<int, string, ulong>(LogLevel.Information, new EventId(2, "Progress"),
-      "    Added {Added} messages for channel: {ChannelName} ({ChannelId})");
+    LoggerMessage.Define<int, string, ulong>(
+      LogLevel.Information,
+      new EventId(2, "Progress"),
+      "    Added {Added} messages for channel: {ChannelName} ({ChannelId})"
+    );
 
   private static readonly Action<ILogger, string, ulong, Exception?> _logChannelComplete =
-      LoggerMessage.Define<string, ulong>(LogLevel.Information, new EventId(3, "Complete"),
-      "  No more messages for channel: {ChannelName} ({ChannelId})");
+    LoggerMessage.Define<string, ulong>(
+      LogLevel.Information,
+      new EventId(3, "Complete"),
+      "  No more messages for channel: {ChannelName} ({ChannelId})"
+    );
 
   private static readonly Action<ILogger, string, ulong, Exception?> _logMissingPermission =
-      LoggerMessage.Define<string, ulong>(LogLevel.Information, new EventId(4, "Permission"),
-      "  Missing permission to read channel {ChannelName} ({ChannelId})");
+    LoggerMessage.Define<string, ulong>(
+      LogLevel.Information,
+      new EventId(4, "Permission"),
+      "  Missing permission to read channel {ChannelName} ({ChannelId})"
+    );
 
-  private static async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(SocketTextChannel channel)
+  private static async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(
+    SocketTextChannel channel
+  )
   {
     var hasAtLeastOneMessage = false;
     ulong? lastMessageId = null;
     do
     {
-      await foreach (var chunk in
-        (lastMessageId == null || !lastMessageId.HasValue
-          ? channel.GetMessagesAsync()
-          : channel.GetMessagesAsync(fromMessageId: lastMessageId.Value, dir: Discord.Direction.Before)).ConfigureAwait(false)
+      await foreach (
+        var chunk in (
+          lastMessageId == null || !lastMessageId.HasValue
+            ? channel.GetMessagesAsync()
+            : channel.GetMessagesAsync(
+              fromMessageId: lastMessageId.Value,
+              dir: Discord.Direction.Before
+            )
+        ).ConfigureAwait(false)
       )
       {
         var messages = chunk
@@ -59,14 +93,16 @@ internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger,
         }
 
         var lowestMessageId = messages.Min(message => message.Id);
-        lastMessageId = lastMessageId == lowestMessageId
-          ? null
-          : lowestMessageId;
+        lastMessageId = lastMessageId == lowestMessageId ? null : lowestMessageId;
       }
     } while (hasAtLeastOneMessage && lastMessageId.HasValue);
   }
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "<Pending>")]
+  [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Reliability",
+    "CA2007:Consider calling ConfigureAwait on the awaited task",
+    Justification = "<Pending>"
+  )]
   public async Task Import(SocketGuild guild)
   {
     foreach (var channel in guild.TextChannels)
@@ -76,25 +112,39 @@ internal sealed class InitialGuildImporter(ILogger<InitialGuildImporter> logger,
         await using var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
         _logProcessingChannel(logger, guild.Name, channel.Name, null);
         var added = 0;
-        await foreach (var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false))
+        await foreach (
+          var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false)
+        )
         {
           foreach (var url in FindUrlsInContent.FindUrls(message.Content))
           {
-            var existing = await db.Messages.FirstOrDefaultAsync(e => e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url).ConfigureAwait(false);
+            var existing = await db
+              .Messages.FirstOrDefaultAsync(e =>
+                e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url
+              )
+              .ConfigureAwait(false);
             if (existing != null)
             {
-              _logDuplicateFound(logger, guild.Name, channel.Name, message.Id.ToString(CultureInfo.InvariantCulture), url, null);
+              _logDuplicateFound(
+                logger,
+                guild.Name,
+                channel.Name,
+                message.Id.ToString(CultureInfo.InvariantCulture),
+                url,
+                null
+              );
               return;
             }
             await db.AddAsync(
-              new Message(
-                MessageId: message.Id.ToString(CultureInfo.InvariantCulture),
-                Url: url,
-                ChannelId: message.Channel.Id.ToString(CultureInfo.InvariantCulture),
-                Timestamp: message.CreatedAt,
-                AuthorName: message.Author.Username
+                new Message(
+                  MessageId: message.Id.ToString(CultureInfo.InvariantCulture),
+                  Url: url,
+                  ChannelId: message.Channel.Id.ToString(CultureInfo.InvariantCulture),
+                  Timestamp: message.CreatedAt,
+                  AuthorName: message.Author.Username
+                )
               )
-            ).ConfigureAwait(false);
+              .ConfigureAwait(false);
             added++;
             if (added % 50 == 0)
             {

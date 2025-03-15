@@ -7,7 +7,10 @@ internal static class YoutubeTransform
   internal static string Transform(string urlStr)
   {
     // Skip all non-youtube related domains.
-    if (!urlStr.Contains("youtu.be/", StringComparison.InvariantCultureIgnoreCase) && !urlStr.Contains("youtube.com/watch?", StringComparison.InvariantCultureIgnoreCase))
+    if (
+      !urlStr.Contains("youtu.be/", StringComparison.InvariantCultureIgnoreCase)
+      && !urlStr.Contains("youtube.com/watch?", StringComparison.InvariantCultureIgnoreCase)
+    )
     {
       return urlStr;
     }
@@ -26,10 +29,7 @@ internal static class YoutubeTransform
     }
 
     // Implicitly, remove any GET parameters not being "v".
-    queryObj.AllKeys
-      .Where(e => e != "v")
-      .ToList()
-      .ForEach(e => queryObj.Remove(e));
+    queryObj.AllKeys.Where(e => e != "v").ToList().ForEach(e => queryObj.Remove(e));
 
     urlObj.Query = queryObj.ToString();
     // NOTE: This is sort of a hack, but setting the port to -1 removes it

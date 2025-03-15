@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace YeOldeLinkDetector.Data;
 
-
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<DataContext>
 {
   public DataContext CreateDbContext(string[] args)
