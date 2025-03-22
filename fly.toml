@@ -1,0 +1,15 @@
+# fly.toml app configuration file generated for ye-olde-link-detector on 2025-03-22T12:20:16Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'ye-olde-link-detector'
+primary_region = 'fra'
+
+[build]
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
