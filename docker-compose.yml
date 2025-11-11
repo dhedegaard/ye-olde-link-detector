@@ -7,6 +7,8 @@ services:
     environment:
       - TOKEN=${TOKEN:-CHANGE_ME}
       - CONNECTION_STRING=${CONNECTION_STRING:-Host=db; Port=5432; Username=postgres; Password=CHANGE_ME; Database=db}
+    links:
+      - db
     depends_on:
       db:
         condition: service_started
@@ -15,14 +17,12 @@ services:
       - 8.8.4.4
 
   db:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
+    shm_size: 128mb
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-CHANGE_ME}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-db}
     volumes:
-      - db-volume:/var/lib/postgresql/data
-
-volumes:
-  db-volume:
+      - ./data:/var/lib/postgresql

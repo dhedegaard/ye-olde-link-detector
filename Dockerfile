@@ -8,7 +8,7 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 # Copy everything
 COPY . ./
 # Build and publish a release
-RUN dotnet publish YeOldeLinkDetector.Bot -c Release -o out
+RUN dotnet publish YeOldeLinkDetector.Bot -c Release -o out -p:PublishReadyToRun=true
 
 ENV TOKEN=set_me \
   CONNECTION_STRING=set_me
