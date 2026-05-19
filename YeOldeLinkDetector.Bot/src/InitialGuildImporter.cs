@@ -55,6 +55,13 @@ internal sealed class InitialGuildImporter(
       "  Missing permission to read channel {ChannelName} ({ChannelId})"
     );
 
+  private static readonly Action<ILogger, string, ulong, int, Exception> _logHttpError =
+    LoggerMessage.Define<string, ulong, int>(
+      LogLevel.Error,
+      new EventId(5, "HttpError"),
+      "Unexpected HTTP {HttpCode} for channel {ChannelName} ({ChannelId})"
+    );
+
   private static async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(
     SocketTextChannel channel
   )
@@ -166,6 +173,10 @@ internal sealed class InitialGuildImporter(
         if (((int)e.HttpCode) == 50001)
         {
           _logMissingPermission(logger, channel.Name, channel.Id, null);
+        }
+        else
+        {
+          _logHttpError(logger, channel.Name, channel.Id, (int)e.HttpCode, e);
         }
       }
     }
