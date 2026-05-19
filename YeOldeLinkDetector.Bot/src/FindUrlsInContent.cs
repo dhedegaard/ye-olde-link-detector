@@ -14,8 +14,8 @@ internal static partial class FindUrlsInContent
   internal static IEnumerable<string> FindUrls(string content) =>
     string.IsNullOrWhiteSpace(content)
       ? []
-      : from capture in UrlRegex().Match(content).Captures
-      select capture.Value into value
-      where !string.IsNullOrWhiteSpace(value)
-      select YoutubeTransform.Transform(value);
+      : (from match in UrlRegex().Matches(content)
+         select match.Value into value
+         where !string.IsNullOrWhiteSpace(value)
+         select YoutubeTransform.Transform(value)).Distinct();
 }
