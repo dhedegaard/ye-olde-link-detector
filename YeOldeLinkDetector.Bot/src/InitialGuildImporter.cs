@@ -112,6 +112,7 @@ internal sealed class InitialGuildImporter(
         await using var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
         _logProcessingChannel(logger, guild.Name, channel.Name, null);
         var added = 0;
+        var stopChannel = false;
         await foreach (
           var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false)
         )
@@ -133,7 +134,8 @@ internal sealed class InitialGuildImporter(
                 url,
                 null
               );
-              return;
+              stopChannel = true;
+              break;
             }
             await db.AddAsync(
                 new Message(
@@ -150,6 +152,10 @@ internal sealed class InitialGuildImporter(
             {
               _logProgress(logger, added, channel.Name, channel.Id, null);
             }
+          }
+          if (stopChannel)
+          {
+            break;
           }
         }
         await db.SaveChangesAsync().ConfigureAwait(false);
