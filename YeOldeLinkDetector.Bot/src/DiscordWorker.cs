@@ -37,6 +37,12 @@ internal sealed class DiscordWorker(
     new EventId(4, "Shutdown"),
     "Disconnected due to shutdown"
   );
+  private static readonly Action<ILogger, string, Exception> _logUrlError =
+    LoggerMessage.Define<string>(
+      LogLevel.Error,
+      new EventId(5, "UrlError"),
+      "Failed to process URL: {Url}"
+    );
 
   [SuppressMessage(
     "Reliability",
@@ -76,43 +82,52 @@ internal sealed class DiscordWorker(
       {
         _ = Task.Run(async () =>
         {
-          await using var db = await dbFactory
-            .CreateDbContextAsync(stoppingToken)
-            .ConfigureAwait(false);
-          string reply = "";
-          var existing = (
-            await db
-              .Messages.Where(e =>
-                e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture)
-              )
-              .OrderBy(e => e.Timestamp)
-              .ToListAsync()
-              .ConfigureAwait(false)
-          ).AsReadOnly();
-          if (existing.Count != 0)
+          try
           {
-            reply = Formatter.FormatOutputMessage(
-              userId: msg.Author.Id.ToString(CultureInfo.InvariantCulture),
-              url: url,
-              postCount: existing.Count,
-              firstTimePosted: existing[0]
-            );
+            await using var db = await dbFactory
+              .CreateDbContextAsync(stoppingToken)
+              .ConfigureAwait(false);
+            string reply = "";
+            var existing = (
+              await db
+                .Messages.Where(e =>
+                  e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture)
+                )
+                .OrderBy(e => e.Timestamp)
+                .ToListAsync()
+                .ConfigureAwait(false)
+            ).AsReadOnly();
+            if (existing.Count != 0)
+            {
+              reply = Formatter.FormatOutputMessage(
+                userId: msg.Author.Id.ToString(CultureInfo.InvariantCulture),
+                url: url,
+                postCount: existing.Count,
+                firstTimePosted: existing[0]
+              );
+            }
+            await db.AddAsync(
+                new Message(
+                  MessageId: msg.Id.ToString(CultureInfo.InvariantCulture),
+                  Url: url,
+                  ChannelId: msg.Channel.Id.ToString(CultureInfo.InvariantCulture),
+                  Timestamp: msg.CreatedAt,
+                  AuthorName: msg.Author.Username
+                )
+              )
+              .ConfigureAwait(false);
+            await db.SaveChangesAsync().ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(reply))
+            {
+              await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
+              _logReply(logger, reply, null);
+            }
           }
-          await db.AddAsync(
-              new Message(
-                MessageId: msg.Id.ToString(CultureInfo.InvariantCulture),
-                Url: url,
-                ChannelId: msg.Channel.Id.ToString(CultureInfo.InvariantCulture),
-                Timestamp: msg.CreatedAt,
-                AuthorName: msg.Author.Username
-              )
-            )
-            .ConfigureAwait(false);
-          await db.SaveChangesAsync().ConfigureAwait(false);
-          if (!string.IsNullOrWhiteSpace(reply))
+#pragma warning disable CA1031
+          catch (Exception ex)
+#pragma warning restore CA1031
           {
-            await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
-            _logReply(logger, reply, null);
+            _logUrlError(logger, url, ex);
           }
         });
       }
