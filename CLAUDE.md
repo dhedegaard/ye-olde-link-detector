@@ -23,6 +23,8 @@ dotnet ef database update --project YeOldeLinkDetector.Data
 docker compose up db
 ```
 
+No test suite; verify with `dotnet build`. CI: `dotnet.yml` (restore + build) and `docker-publish.yml`.
+
 ## Environment variables
 
 - `TOKEN` — Discord bot token (required at startup)
