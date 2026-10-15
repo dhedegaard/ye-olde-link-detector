@@ -43,7 +43,7 @@ Two projects in one solution:
 - `InitialGuildImporter.cs` — on `GuildAvailable`, crawls message history to bootstrap the database
 
 **`YeOldeLinkDetector.Data`** — EF Core library
-- `DataContext.cs` — Npgsql-backed `DbContext`; reads `CONNECTION_STRING` env var
+- `Context.cs` — `DataContext`, the Npgsql-backed `DbContext`; reads `CONNECTION_STRING` env var
 - `Message.cs` — single entity record: `MessageId`, `Url`, `ChannelId`, `Timestamp`, `AuthorName`
 - `Migrations/` — EF Core migration files
 
