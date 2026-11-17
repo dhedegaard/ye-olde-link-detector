@@ -17,5 +17,5 @@ internal static partial class FindUrlsInContent
       : (from match in UrlRegex().Matches(content)
          select match.Value into value
          where !string.IsNullOrWhiteSpace(value)
-         select YoutubeTransform.Transform(value)).Distinct();
+         select YoutubeTransform.Transform(value)).Distinct(StringComparer.Ordinal);
 }
