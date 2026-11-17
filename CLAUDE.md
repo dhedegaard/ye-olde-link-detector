@@ -25,6 +25,8 @@ docker compose up db
 
 No test suite; verify with `dotnet build` (`Directory.Build.props` sets `TreatWarningsAsErrors` with `latest-all` + Meziantou.Analyzer, so any warning fails the build; `.editorconfig` marks `Migrations/` as generated code so analyzers skip it). CI: `dotnet.yml` (restore + build) and `docker-publish.yml`.
 
+Fix analyzer warnings in code; don't suppress them (`NoWarn`, `.editorconfig` severity, `#pragma`, `[SuppressMessage]`) without asking.
+
 - The bot never migrates at startup, and `./data` can lag behind. Before `docker compose up bot`, run `docker compose run --rm -T bot dotnet-ef database update --project YeOldeLinkDetector.Data`. Use `dotnet-ef`, not `dotnet ef`: the image copies the local gitignored `.config/dotnet-tools.json`, so `dotnet ef` asks for a tool restore. The compose `db` publishes no port.
 
 ## Environment variables
@@ -32,13 +34,15 @@ No test suite; verify with `dotnet build` (`Directory.Build.props` sets `TreatWa
 - `TOKEN` — Discord bot token (required at startup)
   - The `.envrc` `TOKEN` is the production bot's. A local run is a second live instance (real servers get double replies), so keep runs short and stop them afterwards.
 - `CONNECTION_STRING` — Postgres connection string (defaults to `localhost` if unset)
-- To test against a fresh DB without touching `./data`: `docker run --rm -p 127.0.0.1:<port>:5432 -e POSTGRES_PASSWORD=x postgres:18-alpine`, point `CONNECTION_STRING` at it, then `dotnet ef database update --project YeOldeLinkDetector.Data`.
+- To test against a fresh DB without touching `./data`: `docker run --rm -p 127.0.0.1:<port>:5432 -e POSTGRES_PASSWORD=x postgres:18-alpine`, point `CONNECTION_STRING` at it (`Host=127.0.0.1;Port=<port>;Username=postgres;Password=x;Database=ye-olde-link-detector`), then `dotnet ef database update --project YeOldeLinkDetector.Data`.
+- Smoke test: run against the fresh DB, post a link twice, and check the log for `REPLY:`. The production bot replies too, so Discord alone proves nothing. The startup import logs one line per channel; filter on `REPLY:|fail:|crit:|Failed to process`. For a graceful stop, `kill -INT` the `bin/Debug/net10.0/YeOldeLinkDetector.Bot` PID (child of `dotnet run`).
 
 ## Key patterns
 
 - **DB scoping**: always `var db = await dbFactory.CreateDbContextAsync(ct).ConfigureAwait(false);` then `await using var dbScope = db.ConfigureAwait(false);` (a plain `await using var db` trips MA0004 on the implicit `DisposeAsync`) — never inject `DataContext` directly; use `IDbContextFactory<DataContext>`.
 - **Logging**: use `LoggerMessage.Define` static delegates, not inline string interpolation. Placeholders bind by position, not by name, so the generic argument order must match the template's.
-- **Event handlers**: Discord event handlers must return synchronously; wrap async work in `Task.Run(async () => { ... })`.
+- **Event handlers**: Discord event handlers must return synchronously; wrap async work in `Task.Run(() => ProcessXAsync(…, ct), ct)`.
+- **Cancellation**: forward `stoppingToken` to every async call. CA2016 only catches a missing token when it's a method parameter, not a variable captured by a lambda.
 - **New URL transforms**: add a static class in `Transforms/` and call it from `FindUrlsInContent.FindUrls`.
 - **New services**: register in `Program.cs`; prefer `AddScoped` for DB-touching services.
 - **Scratch scripts**: a .NET 10 single-file app (`dotnet run x.cs` with `#:project …/YeOldeLinkDetector.Data.csproj`) needs `#:property PublishAot=false`. Otherwise EF throws "Model building is not supported when publishing with NativeAOT".
