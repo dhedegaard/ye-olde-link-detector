@@ -134,7 +134,7 @@ internal sealed class DiscordWorker(
     }
     foreach (var url in FindUrlsInContent.FindUrls(msg.Content))
     {
-      _ = Task.Run(() => ProcessUrlAsync(msg, url, stoppingToken));
+      _ = Task.Run(() => ProcessUrlAsync(msg, url, stoppingToken), stoppingToken);
     }
     return Task.CompletedTask;
   }
@@ -152,7 +152,7 @@ internal sealed class DiscordWorker(
             e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture)
           )
           .OrderBy(e => e.Timestamp)
-          .ToListAsync()
+          .ToListAsync(stoppingToken)
           .ConfigureAwait(false)
       ).AsReadOnly();
       if (existing.Count != 0)
@@ -171,15 +171,20 @@ internal sealed class DiscordWorker(
             ChannelId: msg.Channel.Id.ToString(CultureInfo.InvariantCulture),
             Timestamp: msg.CreatedAt,
             AuthorName: msg.Author.Username
-          )
+          ),
+          stoppingToken
         )
         .ConfigureAwait(false);
-      await db.SaveChangesAsync().ConfigureAwait(false);
+      await db.SaveChangesAsync(stoppingToken).ConfigureAwait(false);
       if (!string.IsNullOrWhiteSpace(reply))
       {
         await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
         _logReply(logger, reply, null);
       }
+    }
+    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+    {
+      // Shutting down; not a processing failure.
     }
 #pragma warning disable CA1031
     catch (Exception ex)
