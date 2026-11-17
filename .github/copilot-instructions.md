@@ -5,7 +5,7 @@ This repository contains a small Discord bot (YeOldeLinkDetector) that detects d
 ## Big picture (what this app does)
 
 - A hosted .NET worker (see `Program.cs`) runs a Discord client (`DiscordSocketClient`) and listens for messages.
-- When a message is received the code extracts URLs via `FindUrlsInContent.FindUrls` (see `src/FindUrlsInContent.cs`) and normalizes YouTube links with `Transforms/Youtube.cs`.
+- When a message is received the code extracts URLs via `FindUrlsInContent.FindUrls` (see `src/FindUrlsInContent.cs`) and normalizes YouTube links with `Transforms/YoutubeTransform.cs`.
 - Each discovered URL is recorded in the application's database (`YeOldeLinkDetector.Data` DataContext) and the bot may reply if the URL has been posted previously — message formatting lives in `Formatter.cs`.
 - On guild availability the `InitialGuildImporter` crawls historical messages to bootstrap the database.
 
@@ -13,7 +13,7 @@ Key runtime components:
 
 - `DiscordWorker` (src/DiscordWorker.cs): the background service that wires Discord events to the business logic.
 - `FindUrlsInContent` (src/FindUrlsInContent.cs): URL extraction via a generated regex and a transform pipeline.
-- `Transforms/Youtube.cs`: canonicalizes YouTube URLs so duplicates are easier to detect.
+- `Transforms/YoutubeTransform.cs`: canonicalizes YouTube URLs so duplicates are easier to detect.
 - `InitialGuildImporter` (src/InitialGuildImporter.cs): historical message import for a guild.
 
 ## How to build & run (developer workflows)
