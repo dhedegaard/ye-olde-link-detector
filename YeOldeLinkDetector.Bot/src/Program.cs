@@ -19,13 +19,7 @@ builder
   .AddScoped<InitialGuildImporter>()
   .AddHostedService<DiscordWorker>();
 
-using var cts = new CancellationTokenSource();
-
-Console.CancelKeyPress += (s, e) => cts.Cancel();
-
 using var host = builder.Build();
 
-while (!cts.IsCancellationRequested)
-{
-  await host.RunAsync(cts.Token).ConfigureAwait(false);
-}
+// The host's console lifetime already handles Ctrl+C and SIGTERM.
+await host.RunAsync().ConfigureAwait(false);
