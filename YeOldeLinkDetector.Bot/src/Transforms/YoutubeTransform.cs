@@ -19,7 +19,7 @@ internal static class YoutubeTransform
 
     // Convert youtu.be -> youtube.com, move the videoId from the path to a GET
     // parameter.
-    if (urlObj.Host == "youtu.be")
+    if (string.Equals(urlObj.Host, "youtu.be", StringComparison.OrdinalIgnoreCase))
     {
       urlObj.Host = "www.youtube.com";
       var videoId = string.Concat(urlObj.Path.Skip(1));
@@ -29,7 +29,10 @@ internal static class YoutubeTransform
     }
 
     // Implicitly, remove any GET parameters not being "v".
-    queryObj.AllKeys.Where(e => e != "v").ToList().ForEach(e => queryObj.Remove(e));
+    queryObj
+      .AllKeys.Where(e => !string.Equals(e, "v", StringComparison.Ordinal))
+      .ToList()
+      .ForEach(e => queryObj.Remove(e));
 
     urlObj.Query = queryObj.ToString();
     // NOTE: This is sort of a hack, but setting the port to -1 removes it
