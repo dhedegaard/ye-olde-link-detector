@@ -30,23 +30,6 @@ No test suite; verify with `dotnet build`. CI: `dotnet.yml` (restore + build) an
 - `TOKEN` — Discord bot token (required at startup)
 - `CONNECTION_STRING` — Postgres connection string (defaults to `localhost` if unset)
 
-## Architecture
-
-Two projects in one solution:
-
-**`YeOldeLinkDetector.Bot`** — runnable worker service
-- `Program.cs` — host setup, DI registration
-- `DiscordWorker.cs` — `BackgroundService` wiring Discord events; spawns `Task.Run` per URL to avoid blocking the event loop
-- `FindUrlsInContent.cs` — regex-based URL extraction, feeds results through the transform pipeline
-- `Transforms/Youtube.cs` — canonicalizes `youtu.be` and `youtube.com` URLs to a single `youtube.com/watch?v=...` form
-- `Formatter.cs` — produces the reply message text
-- `InitialGuildImporter.cs` — on `GuildAvailable`, crawls message history to bootstrap the database
-
-**`YeOldeLinkDetector.Data`** — EF Core library
-- `Context.cs` — `DataContext`, the Npgsql-backed `DbContext`; reads `CONNECTION_STRING` env var
-- `Message.cs` — single entity record: `MessageId`, `Url`, `ChannelId`, `Timestamp`, `AuthorName`
-- `Migrations/` — EF Core migration files
-
 ## Key patterns
 
 - **DB scoping**: always `await using var db = await dbFactory.CreateDbContextAsync(ct)` — never inject `DataContext` directly; use `IDbContextFactory<DataContext>`.
