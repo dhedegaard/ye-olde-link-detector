@@ -23,7 +23,7 @@ dotnet ef database update --project YeOldeLinkDetector.Data
 docker compose up db
 ```
 
-No test suite; verify with `dotnet build` (baseline: 0 warnings, 0 errors; `.editorconfig` marks `Migrations/` as generated code so analyzers skip it). CI: `dotnet.yml` (restore + build) and `docker-publish.yml`.
+No test suite; verify with `dotnet build` (`Directory.Build.props` sets `TreatWarningsAsErrors` with `latest-all` + Meziantou.Analyzer, so any warning fails the build; `.editorconfig` marks `Migrations/` as generated code so analyzers skip it). CI: `dotnet.yml` (restore + build) and `docker-publish.yml`.
 
 - The bot never migrates at startup, and `./data` can lag behind. Before `docker compose up bot`, run `docker compose run --rm -T bot dotnet-ef database update --project YeOldeLinkDetector.Data`. Use `dotnet-ef`, not `dotnet ef`: the image copies the local gitignored `.config/dotnet-tools.json`, so `dotnet ef` asks for a tool restore. The compose `db` publishes no port.
 

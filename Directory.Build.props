@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Audit transitive packages too, not just direct references. -->
     <NuGetAuditMode>all</NuGetAuditMode>
   </PropertyGroup>
