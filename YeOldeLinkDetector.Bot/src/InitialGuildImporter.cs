@@ -131,58 +131,7 @@ internal sealed class InitialGuildImporter(
       }
       try
       {
-        var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
-        await using var dbScope = db.ConfigureAwait(false);
-        _logProcessingChannel(logger, guild.Name, channel.Name, null);
-        var added = 0;
-        var stopChannel = false;
-        await foreach (
-          var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false)
-        )
-        {
-          foreach (var url in FindUrlsInContent.FindUrls(message.Content))
-          {
-            var existing = await db
-              .Messages.FirstOrDefaultAsync(e =>
-                e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url
-              )
-              .ConfigureAwait(false);
-            if (existing != null)
-            {
-              _logDuplicateFound(
-                logger,
-                guild.Name,
-                channel.Name,
-                message.Id.ToString(CultureInfo.InvariantCulture),
-                url,
-                null
-              );
-              stopChannel = true;
-              break;
-            }
-            await db.AddAsync(
-                new Message(
-                  MessageId: message.Id.ToString(CultureInfo.InvariantCulture),
-                  Url: url,
-                  ChannelId: message.Channel.Id.ToString(CultureInfo.InvariantCulture),
-                  Timestamp: message.CreatedAt,
-                  AuthorName: message.Author.Username
-                )
-              )
-              .ConfigureAwait(false);
-            added++;
-            if (added % 50 == 0)
-            {
-              _logProgress(logger, added, channel.Name, channel.Id, null);
-            }
-          }
-          if (stopChannel)
-          {
-            break;
-          }
-        }
-        await db.SaveChangesAsync().ConfigureAwait(false);
-        _logChannelComplete(logger, channel.Name, channel.Id, null);
+        await ImportChannelAsync(guild, channel).ConfigureAwait(false);
       }
       catch (Discord.Net.HttpException e)
       {
@@ -196,5 +145,61 @@ internal sealed class InitialGuildImporter(
         }
       }
     }
+  }
+
+  private async Task ImportChannelAsync(SocketGuild guild, SocketTextChannel channel)
+  {
+    var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
+    await using var dbScope = db.ConfigureAwait(false);
+    _logProcessingChannel(logger, guild.Name, channel.Name, null);
+    var added = 0;
+    var stopChannel = false;
+    await foreach (
+      var message in GetAllNonEmptyNonBotMessagesAsync(channel).ConfigureAwait(false)
+    )
+    {
+      foreach (var url in FindUrlsInContent.FindUrls(message.Content))
+      {
+        var existing = await db
+          .Messages.FirstOrDefaultAsync(e =>
+            e.MessageId == message.Id.ToString(CultureInfo.InvariantCulture) && e.Url == url
+          )
+          .ConfigureAwait(false);
+        if (existing != null)
+        {
+          _logDuplicateFound(
+            logger,
+            guild.Name,
+            channel.Name,
+            message.Id.ToString(CultureInfo.InvariantCulture),
+            url,
+            null
+          );
+          stopChannel = true;
+          break;
+        }
+        await db.AddAsync(
+            new Message(
+              MessageId: message.Id.ToString(CultureInfo.InvariantCulture),
+              Url: url,
+              ChannelId: message.Channel.Id.ToString(CultureInfo.InvariantCulture),
+              Timestamp: message.CreatedAt,
+              AuthorName: message.Author.Username
+            )
+          )
+          .ConfigureAwait(false);
+        added++;
+        if (added % 50 == 0)
+        {
+          _logProgress(logger, added, channel.Name, channel.Id, null);
+        }
+      }
+      if (stopChannel)
+      {
+        break;
+      }
+    }
+    await db.SaveChangesAsync().ConfigureAwait(false);
+    _logChannelComplete(logger, channel.Name, channel.Id, null);
   }
 }
