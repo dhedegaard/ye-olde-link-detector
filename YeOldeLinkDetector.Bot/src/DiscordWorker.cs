@@ -67,71 +67,37 @@ internal sealed class DiscordWorker(
       _ = client.StopAsync();
     });
 
+    RegisterHandlers(client, stoppingToken);
+
+    await client
+      .LoginAsync(
+        tokenType: Discord.TokenType.Bot,
+        token: configurationService.Token,
+        validateToken: true
+      )
+      .ConfigureAwait(false);
+    while (!stoppingToken.IsCancellationRequested)
+    {
+      try
+      {
+        await client.StartAsync().ConfigureAwait(false);
+        await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+      }
+      catch (TaskCanceledException) { }
+    }
+
+    // Graceful shutdown
+    await client.StopAsync().ConfigureAwait(false);
+  }
+
+  private void RegisterHandlers(DiscordSocketClient client, CancellationToken stoppingToken)
+  {
     client.Log += (msg) =>
     {
       _logDiscordNet(logger, msg.ToString(), null);
       return Task.CompletedTask;
     };
-    client.MessageReceived += msg =>
-    {
-      if (msg.Author.IsBot)
-      {
-        return Task.CompletedTask;
-      }
-      foreach (var url in FindUrlsInContent.FindUrls(msg.Content))
-      {
-        _ = Task.Run(async () =>
-        {
-          try
-          {
-            var db = await dbFactory.CreateDbContextAsync(stoppingToken).ConfigureAwait(false);
-            await using var dbScope = db.ConfigureAwait(false);
-            string reply = "";
-            var existing = (
-              await db
-                .Messages.Where(e =>
-                  e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture)
-                )
-                .OrderBy(e => e.Timestamp)
-                .ToListAsync()
-                .ConfigureAwait(false)
-            ).AsReadOnly();
-            if (existing.Count != 0)
-            {
-              reply = Formatter.FormatOutputMessage(
-                userId: msg.Author.Id.ToString(CultureInfo.InvariantCulture),
-                url: url,
-                postCount: existing.Count,
-                firstTimePosted: existing[0]
-              );
-            }
-            await db.AddAsync(
-                new Message(
-                  MessageId: msg.Id.ToString(CultureInfo.InvariantCulture),
-                  Url: url,
-                  ChannelId: msg.Channel.Id.ToString(CultureInfo.InvariantCulture),
-                  Timestamp: msg.CreatedAt,
-                  AuthorName: msg.Author.Username
-                )
-              )
-              .ConfigureAwait(false);
-            await db.SaveChangesAsync().ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(reply))
-            {
-              await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
-              _logReply(logger, reply, null);
-            }
-          }
-#pragma warning disable CA1031
-          catch (Exception ex)
-#pragma warning restore CA1031
-          {
-            _logUrlError(logger, url, ex);
-          }
-        });
-      }
-      return Task.CompletedTask;
-    };
+    client.MessageReceived += msg => OnMessageReceived(msg, stoppingToken);
 
     client.GuildAvailable += (guild) =>
     {
@@ -158,25 +124,68 @@ internal sealed class DiscordWorker(
       _logShutdown(logger, null);
       return Task.CompletedTask;
     };
+  }
 
-    await client
-      .LoginAsync(
-        tokenType: Discord.TokenType.Bot,
-        token: configurationService.Token,
-        validateToken: true
-      )
-      .ConfigureAwait(false);
-    while (!stoppingToken.IsCancellationRequested)
+  private Task OnMessageReceived(SocketMessage msg, CancellationToken stoppingToken)
+  {
+    if (msg.Author.IsBot)
     {
-      try
-      {
-        await client.StartAsync().ConfigureAwait(false);
-        await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
-      }
-      catch (TaskCanceledException) { }
+      return Task.CompletedTask;
     }
+    foreach (var url in FindUrlsInContent.FindUrls(msg.Content))
+    {
+      _ = Task.Run(() => ProcessUrlAsync(msg, url, stoppingToken));
+    }
+    return Task.CompletedTask;
+  }
 
-    // Graceful shutdown
-    await client.StopAsync().ConfigureAwait(false);
+  private async Task ProcessUrlAsync(SocketMessage msg, string url, CancellationToken stoppingToken)
+  {
+    try
+    {
+      var db = await dbFactory.CreateDbContextAsync(stoppingToken).ConfigureAwait(false);
+      await using var dbScope = db.ConfigureAwait(false);
+      string reply = "";
+      var existing = (
+        await db
+          .Messages.Where(e =>
+            e.Url == url && e.ChannelId == msg.Channel.Id.ToString(CultureInfo.InvariantCulture)
+          )
+          .OrderBy(e => e.Timestamp)
+          .ToListAsync()
+          .ConfigureAwait(false)
+      ).AsReadOnly();
+      if (existing.Count != 0)
+      {
+        reply = Formatter.FormatOutputMessage(
+          userId: msg.Author.Id.ToString(CultureInfo.InvariantCulture),
+          url: url,
+          postCount: existing.Count,
+          firstTimePosted: existing[0]
+        );
+      }
+      await db.AddAsync(
+          new Message(
+            MessageId: msg.Id.ToString(CultureInfo.InvariantCulture),
+            Url: url,
+            ChannelId: msg.Channel.Id.ToString(CultureInfo.InvariantCulture),
+            Timestamp: msg.CreatedAt,
+            AuthorName: msg.Author.Username
+          )
+        )
+        .ConfigureAwait(false);
+      await db.SaveChangesAsync().ConfigureAwait(false);
+      if (!string.IsNullOrWhiteSpace(reply))
+      {
+        await msg.Channel.SendMessageAsync(text: reply).ConfigureAwait(false);
+        _logReply(logger, reply, null);
+      }
+    }
+#pragma warning disable CA1031
+    catch (Exception ex)
+#pragma warning restore CA1031
+    {
+      _logUrlError(logger, url, ex);
+    }
   }
 }
