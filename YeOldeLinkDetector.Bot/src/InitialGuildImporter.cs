@@ -55,11 +55,18 @@ internal sealed class InitialGuildImporter(
       "  Missing permission to read channel {ChannelName} ({ChannelId})"
     );
 
-  private static readonly Action<ILogger, string, ulong, int, Exception> _logHttpError =
-    LoggerMessage.Define<string, ulong, int>(
+  private static readonly Action<ILogger, int, string, ulong, Exception> _logHttpError =
+    LoggerMessage.Define<int, string, ulong>(
       LogLevel.Error,
       new EventId(5, "HttpError"),
       "Unexpected HTTP {HttpCode} for channel {ChannelName} ({ChannelId})"
+    );
+
+  private static readonly Action<ILogger, ulong, Exception?> _logSkippedNoAccess =
+    LoggerMessage.Define<ulong>(
+      LogLevel.Debug,
+      new EventId(6, "SkippedNoAccess"),
+      "  Skipping channel {ChannelId}: no permission to view it or read its history"
     );
 
   private static async IAsyncEnumerable<Discord.IMessage> GetAllNonEmptyNonBotMessagesAsync(
@@ -114,6 +121,14 @@ internal sealed class InitialGuildImporter(
   {
     foreach (var channel in guild.TextChannels)
     {
+      // Skip channels we can't read up front instead of letting each one fail
+      // with a 403 that still counts against the REST rate limit.
+      var permissions = guild.CurrentUser.GetPermissions(channel);
+      if (!permissions.ViewChannel || !permissions.ReadMessageHistory)
+      {
+        _logSkippedNoAccess(logger, channel.Id, null);
+        continue;
+      }
       try
       {
         await using var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
@@ -170,13 +185,13 @@ internal sealed class InitialGuildImporter(
       }
       catch (Discord.Net.HttpException e)
       {
-        if (((int)e.HttpCode) == 50001)
+        if (e.DiscordCode == Discord.DiscordErrorCode.MissingPermissions)
         {
           _logMissingPermission(logger, channel.Name, channel.Id, null);
         }
         else
         {
-          _logHttpError(logger, channel.Name, channel.Id, (int)e.HttpCode, e);
+          _logHttpError(logger, (int)e.HttpCode, channel.Name, channel.Id, e);
         }
       }
     }
