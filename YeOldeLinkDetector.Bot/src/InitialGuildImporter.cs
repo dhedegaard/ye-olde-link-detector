@@ -131,7 +131,8 @@ internal sealed class InitialGuildImporter(
       }
       try
       {
-        await using var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
+        var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
+        await using var dbScope = db.ConfigureAwait(false);
         _logProcessingChannel(logger, guild.Name, channel.Name, null);
         var added = 0;
         var stopChannel = false;

@@ -36,7 +36,7 @@ No test suite; verify with `dotnet build` (baseline: 0 warnings, 0 errors; `.edi
 
 ## Key patterns
 
-- **DB scoping**: always `await using var db = await dbFactory.CreateDbContextAsync(ct)` — never inject `DataContext` directly; use `IDbContextFactory<DataContext>`.
+- **DB scoping**: always `var db = await dbFactory.CreateDbContextAsync(ct).ConfigureAwait(false);` then `await using var dbScope = db.ConfigureAwait(false);` (a plain `await using var db` trips MA0004 on the implicit `DisposeAsync`) — never inject `DataContext` directly; use `IDbContextFactory<DataContext>`.
 - **Logging**: use `LoggerMessage.Define` static delegates, not inline string interpolation. Placeholders bind by position, not by name, so the generic argument order must match the template's.
 - **Event handlers**: Discord event handlers must return synchronously; wrap async work in `Task.Run(async () => { ... })`.
 - **New URL transforms**: add a static class in `Transforms/` and call it from `FindUrlsInContent.FindUrls`.

@@ -37,7 +37,7 @@ Key runtime components:
 
 - Small single-purpose internal classes are implemented as 'file-scoped' records/functional classes and registered with DI in `Program.cs`.
 - Background processing: prefer `BackgroundService` derived classes that receive dependencies via constructor injection and implement `ExecuteAsync` (see `DiscordWorker`).
-- DB usage: code uses `IDbContextFactory<DataContext>` and `await using var db = await dbFactory.CreateDbContextAsync()` to scope contexts per background operation.
+- DB usage: code uses `IDbContextFactory<DataContext>` and `var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);` + `await using var dbScope = db.ConfigureAwait(false);` to scope contexts per background operation.
 - Logging: uses structured `LoggerMessage.Define` static delegates (see `DiscordWorker` and `InitialGuildImporter`) rather than inline string concatenation.
 - Async/cancellation: the host uses a CancellationTokenSource wired to Ctrl+C; take care to pass cancellation tokens to long-running DB or network calls when adding new code.
 

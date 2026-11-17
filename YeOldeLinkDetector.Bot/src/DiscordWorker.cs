@@ -84,9 +84,8 @@ internal sealed class DiscordWorker(
         {
           try
           {
-            await using var db = await dbFactory
-              .CreateDbContextAsync(stoppingToken)
-              .ConfigureAwait(false);
+            var db = await dbFactory.CreateDbContextAsync(stoppingToken).ConfigureAwait(false);
+            await using var dbScope = db.ConfigureAwait(false);
             string reply = "";
             var existing = (
               await db
